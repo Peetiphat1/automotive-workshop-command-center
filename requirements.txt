@@ -1,0 +1,11 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+sqlalchemy==2.0.36
+pydantic==2.10.3
+pydantic-settings==2.7.0
+langgraph==0.2.53
+langchain-core==0.3.25
+python-multipart==0.0.20
+pillow==11.0.0
+python-dateutil==2.9.0.post0
+aiosqlite==0.20.0
