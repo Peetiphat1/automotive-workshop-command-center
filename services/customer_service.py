@@ -273,6 +273,28 @@ def update_vehicle_mileage(db: Session, plate: str, req: VehicleMileageUpdate) -
     if req.last_tire_change_mileage is not None:
         vehicle.last_tire_change_mileage = req.last_tire_change_mileage
 
+    # Clear respective overdue alerts if they exist
+    from datetime import datetime
+    now_dt = datetime.utcnow()
+    if req.last_oil_change_date or req.last_oil_change_mileage is not None:
+        for w in vehicle.health_watchlist:
+            if w.component == "น้ำมันเครื่อง":
+                w.is_overdue = False
+                w.condition = "ได้รับการอัปเดตประวัติ"
+                w.notes = f"อัปเดตประวัติการบำรุงรักษาด้วยตนเอง เมื่อ {now_dt.strftime('%Y-%m-%d')}"
+    if req.last_battery_date:
+        for w in vehicle.health_watchlist:
+            if w.component == "แบตเตอรี่":
+                w.is_overdue = False
+                w.condition = "ได้รับการอัปเดตประวัติ"
+                w.notes = f"อัปเดตประวัติการบำรุงรักษาด้วยตนเอง เมื่อ {now_dt.strftime('%Y-%m-%d')}"
+    if req.last_tire_change_mileage is not None:
+        for w in vehicle.health_watchlist:
+            if w.component == "ยางรถยนต์":
+                w.is_overdue = False
+                w.condition = "ได้รับการอัปเดตประวัติ"
+                w.notes = f"อัปเดตประวัติการบำรุงรักษาด้วยตนเอง เมื่อ {now_dt.strftime('%Y-%m-%d')}"
+
     db.commit()
     db.refresh(vehicle)
     return _vehicle_to_response(vehicle)

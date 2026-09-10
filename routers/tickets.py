@@ -72,3 +72,13 @@ def approve_ticket(
     db: Session = Depends(get_db),
 ):
     return ticket_service.approve_ticket(db, ticket_id, req)
+
+
+@router.get(
+    "/track/{query}",
+    response_model=list[TicketResponse],
+    summary="Track ticket status publicly by plate or ID",
+)
+def track_ticket(query: str, db: Session = Depends(get_db)):
+    return ticket_service.search_tickets_for_tracking(db, query)
+

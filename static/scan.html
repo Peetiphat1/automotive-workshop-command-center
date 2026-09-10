@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧾 Bill Scanner — R.O.S.E.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/chat.css">
+  <link rel="stylesheet" href="/static/scan.css">
+</head>
+<body class="scan-page">
+
+  <!-- ── TOP HEADER ── -->
+  <header class="scan-topbar">
+    <div class="scan-brand">
+      <a href="/dashboard" class="back-link"><i data-lucide="arrow-left"></i></a>
+      <div class="brand-icon-wrap sm"><i data-lucide="scan-line"></i></div>
+      <div>
+        <span class="brand-title">Bill Scanner</span>
+        <span class="brand-sub">R.O.S.E. End-of-Day Review</span>
+      </div>
+    </div>
+
+    <div class="scan-queue-info" id="queue-info" style="display:none">
+      <button class="queue-nav" id="btn-prev" onclick="navigateQueue(-1)"><i data-lucide="chevron-left"></i></button>
+      <span id="queue-label">Bill 1 of 1</span>
+      <button class="queue-nav" id="btn-next" onclick="navigateQueue(1)"><i data-lucide="chevron-right"></i></button>
+    </div>
+
+    <div class="scan-header-actions">
+      <label class="btn-upload" for="file-input">
+        <i data-lucide="upload"></i> Upload Bill Photo(s)
+        <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFileUpload(event)">
+      </label>
+      <a href="/stock" class="btn-secondary"><i data-lucide="package"></i> Stock</a>
+    </div>
+  </header>
+
+  <!-- ── UPLOAD DROP ZONE (shown when no bill) ── -->
+  <div class="drop-zone" id="drop-zone" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+    <div class="drop-zone-inner">
+      <div class="drop-icon"><i data-lucide="scan-line"></i></div>
+      <h2>Drop Bill Photos Here</h2>
+      <p>Or click the <strong>Upload Bill Photo(s)</strong> button above</p>
+      <p class="drop-hint">Supports JPG, PNG, HEIC — multiple files at once</p>
+      <label class="btn-upload-lg" for="file-input">
+        <i data-lucide="image-plus"></i> Choose Photos
+      </label>
+    </div>
+  </div>
+
+  <!-- ── SPLIT VIEW (shown when bill is loaded) ── -->
+  <div class="scan-split" id="scan-split" style="display:none">
+
+    <!-- LEFT: Bill image -->
+    <div class="scan-left" id="scan-left">
+      <div class="image-toolbar">
+        <span class="img-label" id="img-label">bill_photo.jpg</span>
+        <div class="img-tools">
+          <button onclick="zoomIn()" title="Zoom in"><i data-lucide="zoom-in"></i></button>
+          <button onclick="zoomOut()" title="Zoom out"><i data-lucide="zoom-out"></i></button>
+          <button onclick="resetZoom()" title="Reset zoom"><i data-lucide="maximize-2"></i></button>
+        </div>
+      </div>
+      <div class="image-viewport" id="image-viewport">
+        <img id="bill-image" src="" alt="Bill photo" draggable="false">
+      </div>
+      <div class="ai-badge" id="ai-badge">
+        <i data-lucide="cpu"></i> <span id="ai-badge-text">AI Extracted</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Editable review form -->
+    <div class="scan-right" id="scan-right">
+      <div class="review-scroll">
+
+        <!-- Math check banner -->
+        <div class="math-banner" id="math-banner" style="display:none">
+          <i data-lucide="alert-triangle"></i>
+          <span id="math-banner-text">Total mismatch — please verify amounts</span>
+        </div>
+
+        <!-- Section: Customer & Vehicle -->
+        <div class="review-section">
+          <div class="section-label"><i data-lucide="user"></i> Customer Info</div>
+          <div class="review-grid">
+            <div class="review-field">
+              <label>Customer Name</label>
+              <input type="text" id="r-customer-name" placeholder="ชื่อลูกค้า">
+            </div>
+            <div class="review-field">
+              <label>Phone</label>
+              <input type="text" id="r-customer-phone" placeholder="08X-XXX-XXXX">
+            </div>
+          </div>
+        </div>
+
+        <div class="review-section">
+          <div class="section-label"><i data-lucide="car"></i> Vehicle Info</div>
+          <div class="review-grid">
+            <div class="review-field">
+              <label>License Plate ★</label>
+              <input type="text" id="r-plate" placeholder="กข 1234 กรุงเทพ">
+            </div>
+            <div class="review-field">
+              <label>Year</label>
+              <input type="number" id="r-year" placeholder="2020" min="1990" max="2030">
+            </div>
+            <div class="review-field">
+              <label>Brand</label>
+              <input type="text" id="r-brand" placeholder="Toyota" list="brand-list">
+              <datalist id="brand-list">
+                <option value="Toyota"><option value="Honda"><option value="Isuzu">
+                <option value="Mitsubishi"><option value="Nissan"><option value="Mazda">
+                <option value="Ford"><option value="Chevrolet"><option value="BMW">
+                <option value="Mercedes-Benz"><option value="Suzuki"><option value="Subaru">
+              </datalist>
+            </div>
+            <div class="review-field">
+              <label>Model</label>
+              <input type="text" id="r-model" placeholder="Camry">
+            </div>
+            <div class="review-field" style="grid-column:span 2">
+              <label>Submodel / Grade</label>
+              <input type="text" id="r-submodel" placeholder="e.g. 2.5 Hybrid, 1.6 Turbo, 4x4 AT">
+            </div>
+            <div class="review-field">
+              <label>Engine Size</label>
+              <input type="text" id="r-engine" placeholder="e.g. 2.5L, 1600cc">
+            </div>
+            <div class="review-field">
+              <label>Fuel Type</label>
+              <select id="r-fuel">
+                <option value="">— Select —</option>
+                <option value="เบนซิน">⛽ เบนซิน (Gasoline)</option>
+                <option value="ดีเซล">⛽ ดีเซล (Diesel)</option>
+                <option value="ไฮบริด">⚡ ไฮบริด (Hybrid)</option>
+                <option value="EV">🔋 EV (Electric)</option>
+                <option value="LPG">LPG / NGV</option>
+              </select>
+            </div>
+            <div class="review-field">
+              <label>Transmission</label>
+              <select id="r-transmission">
+                <option value="">— Select —</option>
+                <option value="อัตโนมัติ">อัตโนมัติ (Auto)</option>
+                <option value="ธรรมดา">ธรรมดา (Manual)</option>
+                <option value="CVT">CVT</option>
+                <option value="DCT">DCT (Dual Clutch)</option>
+              </select>
+            </div>
+            <div class="review-field">
+              <label>Color</label>
+              <input type="text" id="r-color" placeholder="e.g. ขาว, ดำ, เทา">
+            </div>
+            <div class="review-field">
+              <label>Mileage (km)</label>
+              <input type="number" id="r-mileage" placeholder="52000">
+            </div>
+            <div class="review-field">
+              <label>Date</label>
+              <input type="text" id="r-date" placeholder="DD/MM/YYYY">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Parts & Services -->
+        <div class="review-section">
+          <div class="section-label"><i data-lucide="wrench"></i> Parts & Services</div>
+          <table class="items-table" id="items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="num-col">Qty</th>
+                <th class="num-col">Unit Price ฿</th>
+                <th class="num-col">Total ฿</th>
+                <th class="act-col"></th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody">
+              <!-- rows injected by JS -->
+            </tbody>
+          </table>
+          <button class="btn-add-row" onclick="addItemRow()">
+            <i data-lucide="plus"></i> Add Row
+          </button>
+        </div>
+
+        <!-- Section: Totals -->
+        <div class="review-section">
+          <div class="review-grid">
+            <div class="review-field">
+              <label>Mechanic</label>
+              <input type="text" id="r-mechanic" placeholder="ช่างสมชาย">
+            </div>
+            <div class="review-field">
+              <label>Labor Cost ฿</label>
+              <input type="number" id="r-labor" placeholder="500" step="0.01" oninput="recalcTotal()">
+            </div>
+            <div class="review-field total-field" style="grid-column:span 2">
+              <label>Grand Total ฿</label>
+              <input type="number" id="r-total" placeholder="0.00" step="0.01">
+              <span class="total-auto-note" id="total-auto-note"></span>
+            </div>
+          </div>
+          <div class="review-field" style="margin-top:8px">
+            <label>Notes</label>
+            <textarea id="r-notes" rows="2" placeholder="หมายเหตุ..."></textarea>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="review-actions">
+          <button class="btn-reject" onclick="rejectBill()">
+            <i data-lucide="x-circle"></i> Reject
+          </button>
+          <button class="btn-confirm-bill" id="btn-confirm" onclick="confirmBill()">
+            <i data-lucide="check-circle"></i> Confirm & Post
+          </button>
+        </div>
+
+      </div><!-- /review-scroll -->
+    </div><!-- /scan-right -->
+  </div><!-- /scan-split -->
+
+  <!-- Processing overlay -->
+  <div class="processing-overlay" id="processing-overlay" style="display:none">
+    <div class="processing-box">
+      <div class="processing-spinner"></div>
+      <div class="processing-label" id="processing-label">AI is reading the bill...</div>
+    </div>
+  </div>
+
+  <!-- Success toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/static/scan.js"></script>
+</body>
+</html>

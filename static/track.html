@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 ติดตามสถานะงานซ่อม — Live Repair Tracker</title>
+    <meta name="description" content="ระบบติดตามสถานะงานซ่อมรถยนต์เรียลไทม์ Automotive Workshop Command Center">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/track.css">
+</head>
+<body>
+    <div class="track-container">
+        <!-- Header -->
+        <header class="track-header">
+            <div class="brand">
+                <div class="brand-icon"><i data-lucide="wrench"></i></div>
+                <div>
+                    <h1>R.O.S.E. Garage Tracker</h1>
+                    <p>ระบบเช็คสถานะงานซ่อมรถยนต์ออนไลน์</p>
+                </div>
+            </div>
+            <div class="header-nav">
+                <a href="/dashboard" class="nav-btn"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+            </div>
+        </header>
+
+        <!-- Search Box -->
+        <section class="search-section">
+            <div class="search-card">
+                <h2><i data-lucide="search"></i> ค้นหาสถานะงานซ่อมของคุณ</h2>
+                <p>กรอกเลขทะเบียนรถยนต์ (เช่น <code>กข 1234 กรุงเทพ</code>) หรือ หมายเลข Ticket ID</p>
+                <div class="search-bar">
+                    <div class="input-wrap">
+                        <i data-lucide="car"></i>
+                        <input type="text" id="track-input" placeholder="พิมพ์เลขทะเบียนรถ หรือ เลข Ticket..." value="กข 1234 กรุงเทพ">
+                    </div>
+                    <button id="btn-search" onclick="performTrack()"><i data-lucide="arrow-right"></i> ค้นหา</button>
+                </div>
+                <div class="quick-tags">
+                    <span>ตัวอย่างทะเบียนในระบบ:</span>
+                    <button class="tag-btn" onclick="quickSearch('กข 1234 กรุงเทพ')">กข 1234 (Camry)</button>
+                    <button class="tag-btn" onclick="quickSearch('1กข 9999 กรุงเทพ')">1กข 9999 (PCX)</button>
+                    <button class="tag-btn" onclick="quickSearch('ฮข 5678 ชลบุรี')">ฮข 5678 (D-Max)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Area -->
+        <section id="results-area" class="results-section" style="display:none;">
+            <!-- Content will be injected dynamically -->
+        </section>
+
+        <footer class="track-footer">
+            <p>© 2026 Automotive Workshop Command Center — R.O.S.E. Framework</p>
+        </footer>
+    </div>
+
+    <script src="/static/track.js"></script>
+</body>
+</html>

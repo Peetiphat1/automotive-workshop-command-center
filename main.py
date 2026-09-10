@@ -19,15 +19,18 @@ from datetime import datetime, timedelta
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from core.config import settings
 from core.database import Base, SessionLocal, engine
 from models.db_models import (
     BillStatus, Customer, FinanceBill, LedgerEntry,
     MarketingTask, PartsCatalog, ServiceTicket, TicketStatus,
-    Vehicle, VehicleHealthWatchlist,
+    Vehicle, VehicleHealthWatchlist, StockItem, WorkOrder,
+    Supplier, PurchaseBill, StockHistory, Appointment, Expense
 )
-from routers import customers, finance, marketing, tickets
+from routers import customers, finance, marketing, tickets, stock
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("workshop")
@@ -115,6 +118,28 @@ def _seed(db):
     ]
     db.add_all(parts)
     db.commit()
+
+    # ── Stock Items ───────────────────────────────────────────────────────────
+    if db.query(StockItem).count() == 0:
+        stock_seeds = [
+            StockItem(name_th="น้ำมันเครื่อง 5W-30", name_en="Engine Oil 5W-30", sku="OIL-5W30", category="น้ำมันเครื่อง", quantity=24, unit_cost=200, sell_price=350, reorder_level=10),
+            StockItem(name_th="น้ำมันเครื่อง 10W-40", name_en="Engine Oil 10W-40", sku="OIL-10W40", category="น้ำมันเครื่อง", quantity=18, unit_cost=180, sell_price=300, reorder_level=10),
+            StockItem(name_th="กรองน้ำมันเครื่อง", name_en="Oil Filter", sku="FILTER-OIL", category="กรอง", quantity=30, unit_cost=80, sell_price=150, reorder_level=10),
+            StockItem(name_th="กรองอากาศ", name_en="Air Filter", sku="FILTER-AIR", category="กรอง", quantity=15, unit_cost=120, sell_price=220, reorder_level=5),
+            StockItem(name_th="ผ้าเบรคหน้า", name_en="Front Brake Pad", sku="BRAKE-FRONT", category="เบรค", quantity=8, unit_cost=600, sell_price=1200, reorder_level=4),
+            StockItem(name_th="ผ้าเบรคหลัง", name_en="Rear Brake Pad", sku="BRAKE-REAR", category="เบรค", quantity=6, unit_cost=500, sell_price=950, reorder_level=4),
+            StockItem(name_th="น้ำมันเบรค", name_en="Brake Fluid DOT3", sku="FLUID-BRAKE", category="เบรค", quantity=12, unit_cost=60, sell_price=120, reorder_level=5),
+            StockItem(name_th="แบตเตอรี่ 60Ah", name_en="Battery 60Ah", sku="BAT-60AH", category="ไฟฟ้า", quantity=4, unit_cost=1800, sell_price=2800, reorder_level=2),
+            StockItem(name_th="แบตเตอรี่ 75Ah", name_en="Battery 75Ah", sku="BAT-75AH", category="ไฟฟ้า", quantity=3, unit_cost=2200, sell_price=3500, reorder_level=2),
+            StockItem(name_th="หัวเทียน NGK", name_en="Spark Plug NGK", sku="SPARK-NGK", category="ไฟฟ้า", quantity=40, unit_cost=80, sell_price=160, reorder_level=10),
+            StockItem(name_th="น้ำมันเกียร์อัตโนมัติ ATF", name_en="ATF Transmission Oil", sku="OIL-ATF", category="น้ำมันเครื่อง", quantity=10, unit_cost=250, sell_price=450, reorder_level=5),
+            StockItem(name_th="สายพาน V-Belt", name_en="V-Belt", sku="BELT-V", category="อะไหล่", quantity=7, unit_cost=180, sell_price=350, reorder_level=3),
+            StockItem(name_th="ลูกปืนล้อหน้า", name_en="Front Wheel Bearing", sku="BEAR-FRONT", category="อะไหล่", quantity=4, unit_cost=450, sell_price=900, reorder_level=2),
+            StockItem(name_th="น้ำยาล้างหม้อน้ำ", name_en="Radiator Coolant", sku="COOL-RAD", category="สารเคมี", quantity=20, unit_cost=90, sell_price=180, reorder_level=8),
+            StockItem(name_th="กาวซิลิโคน", name_en="Silicone Gasket", sku="SEAL-SIL", category="สารเคมี", quantity=15, unit_cost=45, sell_price=90, reorder_level=5),
+        ]
+        db.add_all(stock_seeds)
+        db.commit()
 
     # ── Vehicle Health Watchlist ───────────────────────────────────────────────
     watchlist = [
@@ -265,7 +290,61 @@ def _seed(db):
     ]
     db.add_all(ledger)
     db.commit()
-    logger.info("✅ Seed complete — 3 customers, 4 vehicles, 15 parts, 2 tickets, 3 months P&L data.")
+    # ── Suppliers ──────────────────────────────────────────────────────────
+    if db.query(Supplier).count() == 0:
+        sup1 = Supplier(name="ร้านอะไหล่มีสุข", phone="0812223333", email="meesuk@email.com", line_id="meesuk_parts", address="123 ถ.พระราม 4 กรุงเทพ")
+        sup2 = Supplier(name="YS อะไหล่ยนต์", phone="0899887766", email="ys_parts@email.com", line_id="ys_autoparts", address="456 ถ.สุขุมวิท กรุงเทพ")
+        sup3 = Supplier(name="บริษัท ไทยออยล์ จำกัด", phone="0855667788", email="thaioil@email.com", address="789 ถ.เพชรบุรี กรุงเทพ")
+        db.add_all([sup1, sup2, sup3])
+        db.commit()
+        for s in [sup1, sup2, sup3]:
+            db.refresh(s)
+
+        # Purchase bills
+        pb1 = PurchaseBill(supplier_id=sup1.id, bill_number="INV-2026-001", bill_date=now - timedelta(days=30),
+            items=json.dumps([{"name": "น้ำมันเครื่อง 5W-30", "qty": 10, "unit_price": 200, "total": 2000}, {"name": "กรองน้ำมัน", "qty": 5, "unit_price": 80, "total": 400}], ensure_ascii=False),
+            total_amount=2400, notes="สั่งซื้อรอบเดือน ส.ค.")
+        pb2 = PurchaseBill(supplier_id=sup2.id, bill_number="INV-2026-002", bill_date=now - timedelta(days=15),
+            items=json.dumps([{"name": "ผ้าเบรคหน้า", "qty": 4, "unit_price": 600, "total": 2400}, {"name": "ผ้าเบรคหลัง", "qty": 4, "unit_price": 500, "total": 2000}], ensure_ascii=False),
+            total_amount=4400, notes="สั่งซื้อเบรค")
+        db.add_all([pb1, pb2])
+        db.commit()
+
+    # ── Appointments ──────────────────────────────────────────────────────
+    if db.query(Appointment).count() == 0:
+        appt_seeds = [
+            Appointment(customer_name="สมชาย มีสุข", customer_phone="0812345678", vehicle_plate="กข 1234 กรุงเทพ",
+                vehicle_info="Toyota Camry", appointment_date=now + timedelta(days=1), time_slot="09:00",
+                service_type="เปลี่ยนน้ำมันเครื่อง + ตรวจเช็คช่วงล่าง", status="confirmed"),
+            Appointment(customer_name="นภาพร จันทร์ดี", customer_phone="0898765432", vehicle_plate="คง 5678 เชียงใหม่",
+                vehicle_info="Honda PCX 150", appointment_date=now + timedelta(days=1), time_slot="13:30",
+                service_type="เปลี่ยนยางรถยนต์หน้า-หลัง", status="pending"),
+            Appointment(customer_name="วิชัย ทองคำ", customer_phone="0856781234", vehicle_plate="จฉ 9012 ขอนแก่น",
+                vehicle_info="Isuzu D-Max", appointment_date=now + timedelta(days=3), time_slot="10:00",
+                service_type="ตรวจเช็คเกียร์", status="confirmed"),
+            Appointment(customer_name="สมชาย มีสุข", customer_phone="0812345678", vehicle_plate="ชซ 3456 กรุงเทพ",
+                vehicle_info="Mazda 2", appointment_date=now + timedelta(days=7), time_slot="14:00",
+                service_type="เปลี่ยนแบตเตอรี่", status="confirmed"),
+            Appointment(customer_name="นภาพร จันทร์ดี", customer_phone="0898765432", vehicle_plate="คง 5678 เชียงใหม่",
+                vehicle_info="Honda PCX 150", appointment_date=now - timedelta(days=2), time_slot="11:00",
+                service_type="เปลี่ยนน้ำมันเครื่อง", status="completed"),
+        ]
+        db.add_all(appt_seeds)
+        db.commit()
+
+    # ── Expenses ──────────────────────────────────────────────────────────
+    if db.query(Expense).count() == 0:
+        expense_seeds = [
+            Expense(category="ค่าไฟฟ้า", description="ค่าไฟฟ้าเดือนสิงหาคม 2026", amount=2800, expense_date=now - timedelta(days=10), added_by="ผู้จัดการ"),
+            Expense(category="ค่าน้ำประปา", description="ค่าน้ำประปาเดือนสิงหาคม 2026", amount=450, expense_date=now - timedelta(days=10), added_by="ผู้จัดการ"),
+            Expense(category="ค่าเช่า", description="ค่าเช่าอู่ซ่อมรถเดือนกันยายน 2026", amount=15000, expense_date=now - timedelta(days=5), added_by="ผู้จัดการ"),
+            Expense(category="ค่าอินเทอร์เน็ต", description="ค่าอินเทอร์เน็ตเดือนสิงหาคม 2026", amount=890, expense_date=now - timedelta(days=8), added_by="ผู้จัดการ"),
+            Expense(category="อื่นๆ", description="ค่าอุปกรณ์ทำความสะอาด", amount=350, expense_date=now - timedelta(days=3), added_by="ช่างสมศักดิ์"),
+        ]
+        db.add_all(expense_seeds)
+        db.commit()
+
+    logger.info("✅ Seed complete — 3 customers, 4 vehicles, 15 parts, 2 tickets, 3 months P&L data, suppliers, appointments, expenses.")
 
 
 # ─── App lifecycle ────────────────────────────────────────────────────────────
@@ -332,6 +411,76 @@ app.include_router(
     prefix="/api/v1/marketing",
     tags=["📣 Module 4 — Marketing & Retention"],
 )
+
+from routers import chat as chat_router
+app.include_router(
+    chat_router.router,
+    prefix="/api/v1/chat",
+    tags=["💬 Chat Command Center"],
+)
+app.include_router(
+    stock.router,
+    prefix="/api/v1/stock",
+    tags=["📦 Stock & Work Orders"],
+)
+
+from routers import bills as bills_router
+app.include_router(
+    bills_router.router,
+    prefix="/api/v1/bills",
+    tags=["🧾 Bill Scanner"],
+)
+
+# New routers for PDF fixes
+try:
+    from routers import suppliers as suppliers_router
+    app.include_router(
+        suppliers_router.router,
+        prefix="/api/v1/suppliers",
+        tags=["🏭 Suppliers"],
+    )
+except ImportError:
+    pass
+
+try:
+    from routers import appointments as appointments_router
+    app.include_router(
+        appointments_router.router,
+        prefix="/api/v1/appointments",
+        tags=["📅 Appointments"],
+    )
+except ImportError:
+    pass
+
+try:
+    from routers import expenses as expenses_router
+    app.include_router(
+        expenses_router.router,
+        prefix="/api/v1/expenses",
+        tags=["💸 Expenses"],
+    )
+except ImportError:
+    pass
+
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/dashboard", tags=["🏠 Dashboard"])
+def dashboard():
+    return FileResponse("static/index.html")
+
+@app.get("/stock", tags=["🏠 Dashboard"])
+def stock_page():
+    return FileResponse("static/stock.html")
+
+@app.get("/scan", tags=["🏠 Dashboard"])
+def scan_page():
+    return FileResponse("static/scan.html")
+
+@app.get("/track", tags=["🏠 Dashboard"])
+def track_page():
+    return FileResponse("static/track.html")
+
 
 
 # ── Root ──────────────────────────────────────────────────────────────────────

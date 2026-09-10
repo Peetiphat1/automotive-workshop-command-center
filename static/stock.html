@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>📦 Stock Management — R.O.S.E.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/chat.css">
+  <link rel="stylesheet" href="/static/stock.css">
+</head>
+<body class="stock-page">
+  <div class="app-shell stock-layout">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar stock-sidebar">
+      <div class="sidebar-brand">
+          <div class="brand-icon-wrap"><i data-lucide="package"></i></div>
+          <div>
+              <h1>R.O.S.E.</h1>
+              <span>Stock Manager</span>
+          </div>
+      </div>
+      
+      <div class="sidebar-section-label" style="margin-top:20px;">Categories</div>
+      <nav class="category-nav" id="category-nav">
+          <!-- Categories injected here -->
+      </nav>
+      
+      <div style="margin-top:auto; padding-bottom:20px;">
+          <a href="/dashboard" class="quick-btn" style="text-decoration:none; color:var(--text-primary);"><i data-lucide="arrow-left"></i> Back to Chat</a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="chat-main">
+      <header class="chat-header stock-header">
+          <div>
+              <h2>Stock Inventory</h2>
+              <p>Manage parts, fluids, and workshop supplies</p>
+          </div>
+          <div class="header-actions">
+              <div class="search-box">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="search-input" placeholder="Search parts by name or SKU...">
+              </div>
+              <button class="btn-primary" onclick="openAddModal()"><i data-lucide="plus"></i> Add Part</button>
+          </div>
+      </header>
+
+      <div id="low-stock-banner" class="low-stock-banner" style="display:none;">
+          <i data-lucide="alert-triangle"></i>
+          <span>You have items with critically low stock!</span>
+      </div>
+
+      <div class="stock-scroll-area">
+          <div class="stock-grid" id="stock-grid">
+              <!-- Part cards injected here -->
+          </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Add/Edit Modal -->
+  <div id="item-modal" class="modal-backdrop" style="display:none;">
+      <div class="modal-box item-modal-box">
+          <h3 id="modal-title"><i data-lucide="package-plus"></i> Add Part</h3>
+          <form id="item-form" onsubmit="event.preventDefault(); saveItem();">
+              <input type="hidden" id="item-id">
+              <div class="form-grid">
+                  <div class="form-group">
+                      <label>Name (TH) <span class="req">*</span></label>
+                      <input type="text" id="item-name-th" required>
+                  </div>
+                  <div class="form-group">
+                      <label>Name (EN)</label>
+                      <input type="text" id="item-name-en">
+                  </div>
+                  <div class="form-group">
+                      <label>SKU / Code</label>
+                      <input type="text" id="item-sku">
+                  </div>
+                  <div class="form-group">
+                      <label>Category <span class="req">*</span></label>
+                      <input type="text" id="item-category" required list="category-list">
+                      <datalist id="category-list"></datalist>
+                  </div>
+                  <div class="form-group">
+                      <label>Quantity <span class="req">*</span></label>
+                      <input type="number" id="item-quantity" required min="0">
+                  </div>
+                  <div class="form-group">
+                      <label>Reorder Level <span class="req">*</span></label>
+                      <input type="number" id="item-reorder" required min="0" value="5">
+                  </div>
+                  <div class="form-group">
+                      <label>Unit Cost ฿</label>
+                      <input type="number" id="item-cost" step="0.01">
+                  </div>
+                  <div class="form-group">
+                      <label>Sell Price ฿</label>
+                      <input type="number" id="item-price" step="0.01">
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                      <label>Image</label>
+                      <input type="file" id="item-image" accept="image/*">
+                  </div>
+              </div>
+              <div class="modal-actions" style="margin-top:20px;">
+                  <button type="submit" class="btn-confirm"><i data-lucide="save"></i> Save</button>
+                  <button type="button" class="btn-cancel" onclick="closeItemModal()">Cancel</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+  <script src="/static/stock.js"></script>
+</body>
+</html>

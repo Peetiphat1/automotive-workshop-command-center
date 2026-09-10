@@ -148,6 +148,19 @@ def run_marketing_cron(db: Session) -> MarketingTriggerResponse:
     # Persist tasks
     task_ids: List[int] = []
     for t in result["generated_tasks"]:
+        # Check if there is an existing PENDING_ADMIN_APPROVAL task for this vehicle and trigger
+        existing = (
+            db.query(MarketingTask)
+            .filter(
+                MarketingTask.vehicle_id == t.get("vehicle_id"),
+                MarketingTask.trigger_type == t["trigger_type"],
+                MarketingTask.status == MarketingTaskStatus.PENDING_ADMIN_APPROVAL,
+            )
+            .first()
+        )
+        if existing:
+            continue
+
         task = MarketingTask(
             customer_id=t["customer_id"],
             vehicle_id=t.get("vehicle_id"),

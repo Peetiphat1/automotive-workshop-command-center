@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Auto Service — Command Center & AI Copilot</title>
+    <meta name="description" content="ระบบหลังบ้านอัจฉริยะสำหรับศูนย์บริการและอู่ซ่อมรถยนต์ครบวงจร">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/chat.css?v=4.0.0">
+    <style>
+        /* ── CALENDAR ── */
+        .calendar-wrap { padding: 16px; }
+        .cal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+        .cal-header h3 { font-family:'Outfit',sans-serif; font-size:1.2rem; font-weight:700; }
+        .cal-nav-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#f8fafc; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:1rem; transition:all .15s; }
+        .cal-nav-btn:hover { background:rgba(59,130,246,0.3); }
+        .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+        .cal-day-label { text-align:center; font-size:0.72rem; font-weight:600; color:var(--text-muted); padding:4px 0; }
+        .cal-day { min-height:72px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); padding:4px 6px; background:rgba(255,255,255,0.02); cursor:pointer; transition:all .15s; position:relative; }
+        .cal-day:hover { background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.3); }
+        .cal-day.today { border-color:#3b82f6; background:rgba(59,130,246,0.12); }
+        .cal-day.other-month { opacity:0.35; }
+        .cal-day .day-num { font-size:0.78rem; font-weight:600; color:var(--text-secondary); }
+        .cal-day.today .day-num { color:#60a5fa; }
+        .cal-appt-chip { font-size:0.65rem; padding:2px 5px; border-radius:4px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+        .cal-appt-chip.confirmed { background:rgba(16,185,129,0.2); color:#34d399; }
+        .cal-appt-chip.pending { background:rgba(245,158,11,0.2); color:#fbbf24; }
+        .cal-appt-chip.completed { background:rgba(148,163,184,0.15); color:#94a3b8; }
+        .cal-appt-chip.cancelled { background:rgba(239,68,68,0.15); color:#f87171; }
+
+        /* ── CUSTOMER 360 MODAL ── */
+        .profile-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .profile-modal { background:var(--bg-card-solid); border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:min(700px,96vw); max-height:88vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,0.5); }
+        .profile-modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; }
+        .profile-modal-body { overflow-y:auto; padding:20px 24px; flex:1; }
+        .profile-close-btn { background:rgba(255,255,255,0.08); border:none; color:var(--text-secondary); padding:6px 8px; border-radius:8px; cursor:pointer; font-size:1rem; }
+        .profile-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+        .profile-stat-card { background:rgba(255,255,255,0.05); border-radius:10px; padding:12px; text-align:center; }
+        .profile-stat-card .val { font-size:1.4rem; font-weight:700; color:#60a5fa; }
+        .profile-stat-card .lbl { font-size:0.72rem; color:var(--text-muted); margin-top:2px; }
+        .profile-car-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+        .profile-car-chip { background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px; }
+        .profile-history-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+        .profile-history-table th { text-align:left; padding:6px 8px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border); }
+        .profile-history-table td { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.04); }
+
+        /* ── STOCK HISTORY PANEL ── */
+        .stock-history-panel { margin-top:16px; }
+        .history-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.8rem; }
+        .delta-badge { padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.78rem; }
+        .delta-badge.pos { background:rgba(16,185,129,0.2); color:#34d399; }
+        .delta-badge.neg { background:rgba(239,68,68,0.2); color:#f87171; }
+
+        /* ── SUPPLIER CARDS ── */
+        .supplier-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+        .supplier-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; transition:all .15s; }
+        .supplier-card:hover { border-color:rgba(59,130,246,0.4); background:rgba(59,130,246,0.05); }
+        .supplier-card .sup-name { font-weight:700; font-size:1rem; margin-bottom:6px; }
+        .supplier-card .sup-info { font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+        .supplier-card .sup-stats { display:flex; gap:12px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .sup-stat { text-align:center; flex:1; }
+        .sup-stat .n { font-size:1rem; font-weight:700; color:#34d399; }
+        .sup-stat .l { font-size:0.68rem; color:var(--text-muted); }
+
+        /* ── REPORTS ── */
+        .reports-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+        .report-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:20px; }
+        .report-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+        .report-card-title { font-weight:700; font-size:0.95rem; display:flex; align-items:center; gap:8px; }
+        .report-bar-wrap { margin-top:8px; }
+        .report-bar { height:6px; border-radius:3px; margin-bottom:10px; overflow:hidden; background:rgba(255,255,255,0.08); }
+        .report-bar-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+        .report-bar-fill.income { background:linear-gradient(90deg,#10b981,#34d399); }
+        .report-bar-fill.expense { background:linear-gradient(90deg,#ef4444,#f87171); }
+        .report-bar-fill.profit { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+        .report-row { display:flex; justify-content:space-between; font-size:0.83rem; margin-bottom:6px; }
+        .report-row .lbl { color:var(--text-muted); }
+        .report-row .val { font-weight:600; }
+        .report-row .val.green { color:#34d399; }
+        .report-row .val.red { color:#f87171; }
+        .report-row .val.blue { color:#60a5fa; }
+
+        /* ── EXPENSES ── */
+        .expense-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-bottom:16px; }
+        .expense-cat-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; }
+        .expense-cat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+        .bill-img-link { color:#60a5fa; font-size:0.75rem; cursor:pointer; text-decoration:underline; }
+        .bill-img-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:300; display:flex; align-items:center; justify-content:center; }
+        .bill-img-overlay img { max-width:90vw; max-height:90vh; border-radius:12px; }
+
+        /* ── POS HISTORY ── */
+        .pos-history-filter { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+
+        /* ── MODAL FORM ── */
+        .add-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .add-modal-box { background:var(--bg-card-solid); border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:min(500px,96vw); padding:28px; }
+        .add-modal-box h3 { font-size:1.1rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+        .form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+
+    <!-- ── 1. SIDEBAR MENU ── -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon-wrap"><i data-lucide="wrench"></i></div>
+            <div>
+                <h1>Auto Service</h1>
+                <span>Command Center AI</span>
+            </div>
+        </div>
+
+        <div class="sidebar-section-label">MAIN SERVICE</div>
+        <nav class="side-nav">
+            <a href="#" class="nav-item active" data-tab="dashboard" onclick="switchTab(event, 'dashboard')">
+                <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="repairs" onclick="switchTab(event, 'repairs')">
+                <i data-lucide="wrench"></i> <span>งานซ่อม</span>
+                <span class="badge" id="badge-repairs">0</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="pos" onclick="switchTab(event, 'pos')">
+                <i data-lucide="receipt"></i> <span>ประวัติการซื้อ</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="appointments" onclick="switchTab(event, 'appointments')">
+                <i data-lucide="calendar"></i> <span>นัดหมาย</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="customers" onclick="switchTab(event, 'customers')">
+                <i data-lucide="users"></i> <span>ลูกค้า & รถ</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="stock" onclick="switchTab(event, 'stock')">
+                <i data-lucide="tags"></i> <span>คลัง/สต๊อก</span>
+                <span class="badge danger" id="badge-stock-warn">0</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="purchases" onclick="switchTab(event, 'purchases')">
+                <i data-lucide="truck"></i> <span>จัดซื้อ</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="suppliers" onclick="switchTab(event, 'suppliers')">
+                <i data-lucide="building-2"></i> <span>ผู้จำหน่าย</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-section-label" style="margin-top:16px">FINANCE & REPORTS</div>
+        <nav class="side-nav">
+            <a href="#" class="nav-item" data-tab="reports" onclick="switchTab(event, 'reports')">
+                <i data-lucide="pie-chart"></i> <span>รายงาน</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="expenses" onclick="switchTab(event, 'expenses')">
+                <i data-lucide="banknote"></i> <span>ค่าใช้จ่าย</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="settings" onclick="switchTab(event, 'settings')">
+                <i data-lucide="settings"></i> <span>ตั้งค่า</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer" style="margin-top:auto;">
+            <div class="api-status">
+                <span class="status-dot online"></span>
+                <span>R.O.S.E. AI Engine Active</span>
+            </div>
+            <a href="/track" target="_blank" class="track-link"><i data-lucide="external-link"></i> Public Tracker</a>
+        </div>
+    </aside>
+
+    <!-- ── 2. MAIN WORKSPACE ── -->
+    <div class="workspace-main">
+
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-search">
+                <i data-lucide="search"></i>
+                <input type="text" id="global-search" placeholder="ค้นหาเลขทะเบียน, ชื่อลูกค้า, เลขที่ Ticket หรือสินค้า..." onkeypress="handleGlobalSearch(event)">
+            </div>
+            <div class="header-actions">
+                <button class="btn-primary" onclick="openNewIntakeModal()"><i data-lucide="plus-circle"></i> เปิดใบรับรถใหม่</button>
+                <button class="btn-secondary" onclick="openAddAppointmentModal()"><i data-lucide="calendar-plus"></i> นัดหมาย</button>
+                <button class="btn-icon" title="สแกนบิล" onclick="location.href='/scan'"><i data-lucide="scan-line"></i></button>
+                <div class="user-profile">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Admin Avatar">
+                    <div>
+                        <div class="user-name">ผู้จัดการอู่ (Admin)</div>
+                        <div class="user-role">สาขาหลัก (Bangkok)</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── TAB 1: DASHBOARD ── -->
+        <main id="tab-dashboard" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card income">
+                    <div class="kpi-header"><span>ยอดขายรวมเดือนนี้</span><div class="kpi-icon"><i data-lucide="trending-up"></i></div></div>
+                    <div class="kpi-value" id="kpi-revenue">฿0</div>
+                    <div class="kpi-sub green"><i data-lucide="arrow-up-right"></i> +14.2% จากเดือนที่แล้ว</div>
+                </div>
+                <div class="kpi-card active-repairs">
+                    <div class="kpi-header"><span>งานซ่อมกำลังดำเนินการ</span><div class="kpi-icon"><i data-lucide="wrench"></i></div></div>
+                    <div class="kpi-value" id="kpi-active-repairs">0 คัน</div>
+                    <div class="kpi-sub blue" id="kpi-pending-approval">รอช่างอนุมัติ 0 คัน</div>
+                </div>
+                <div class="kpi-card low-stock">
+                    <div class="kpi-header"><span>อะไหล่ใกล้หมดคลัง</span><div class="kpi-icon"><i data-lucide="alert-triangle"></i></div></div>
+                    <div class="kpi-value" id="kpi-low-stock">0 รายการ</div>
+                    <div class="kpi-sub amber">ควรสั่งซื้อเพิ่มเพื่อรองรับงานซ่อม</div>
+                </div>
+                <div class="kpi-card overdue">
+                    <div class="kpi-header"><span>นัดหมายวันนี้</span><div class="kpi-icon"><i data-lucide="calendar-check"></i></div></div>
+                    <div class="kpi-value" id="kpi-appointments">0 คัน</div>
+                    <div class="kpi-sub blue" id="kpi-appt-sub">คลิกดูปฏิทินนัดหมาย</div>
+                </div>
+            </div>
+
+            <div class="dashboard-body-grid">
+                <div class="dash-card main-table-card">
+                    <div class="card-header">
+                        <h3><i data-lucide="clipboard-list"></i> ตารางงานซ่อมล่าสุด</h3>
+                        <div class="table-filter-pills">
+                            <button class="pill active" onclick="filterDashTickets(this, 'all')">ทั้งหมด</button>
+                            <button class="pill" onclick="filterDashTickets(this, 'PENDING_MECHANIC_APPROVAL')">รออนุมัติ</button>
+                            <button class="pill" onclick="filterDashTickets(this, 'APPROVED')">กำลังซ่อม</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="tickets-table">
+                            <thead><tr><th>Ticket #</th><th>ทะเบียน / รุ่น</th><th>ลูกค้า</th><th>อาการ</th><th>ราคา</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                            <tbody id="tickets-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="dash-card-column">
+                    <div class="dash-card">
+                        <div class="card-header">
+                            <h3><i data-lucide="shield-alert"></i> Watchlist เตือนภัย</h3>
+                            <button class="btn-sm" onclick="fetchWatchlist()"><i data-lucide="refresh-cw"></i></button>
+                        </div>
+                        <div class="watchlist-list" id="watchlist-container"><p class="loading-msg">กำลังโหลด...</p></div>
+                    </div>
+                    <div class="dash-card" style="margin-top:20px;">
+                        <div class="card-header">
+                            <h3><i data-lucide="package"></i> สต๊อกด่วน</h3>
+                            <a href="#" onclick="switchTab(null,'stock')" class="link-sm">ดูทั้งหมด</a>
+                        </div>
+                        <div class="quick-stock-list" id="quick-stock-container"><p class="loading-msg">กำลังโหลด...</p></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ── TAB 2: REPAIRS ── -->
+        <main id="tab-repairs" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="wrench"></i> การจัดการงานซ่อม</h2>
+                <button class="btn-primary" onclick="openNewIntakeModal()"><i data-lucide="plus"></i> เปิดใบรับรถใหม่</button>
+            </div>
+            <div class="dash-card">
+                <div id="full-repairs-table-container"></div>
+            </div>
+        </main>
+
+        <!-- ── TAB 3: POS → PURCHASE HISTORY ── -->
+        <main id="tab-pos" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="receipt"></i> ประวัติการซื้อ & อะไหล่ที่ใช้ในการซ่อม</h2>
+                <button class="btn-secondary" onclick="fillInput('บิลอะไหล่');toggleCopilot()"><i data-lucide="cpu"></i> เพิ่มผ่าน AI</button>
+            </div>
+            <div class="dash-card">
+                <div class="pos-history-filter">
+                    <button class="pill active" onclick="filterPOSHistory(this,'all')">ทั้งหมด</button>
+                    <button class="pill" onclick="filterPOSHistory(this,'purchase')">📦 จัดซื้อ</button>
+                    <button class="pill" onclick="filterPOSHistory(this,'repair')">🔧 ใช้ในซ่อม</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>ยอดรวม</th><th>อ้างอิง</th></tr></thead>
+                        <tbody id="pos-history-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลดประวัติ...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- ── TAB 4: APPOINTMENTS (CALENDAR) ── -->
+        <main id="tab-appointments" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="calendar"></i> ปฏิทินนัดหมายลูกค้า</h2>
+                <button class="btn-primary" onclick="openAddAppointmentModal()"><i data-lucide="plus"></i> เพิ่มนัดหมาย</button>
+            </div>
+            <div class="dash-card">
+                <div class="calendar-wrap">
+                    <div class="cal-header">
+                        <button class="cal-nav-btn" onclick="changeCalMonth(-1)">‹ เดือนก่อน</button>
+                        <h3 id="cal-month-label">—</h3>
+                        <button class="cal-nav-btn" onclick="changeCalMonth(1)">เดือนถัดไป ›</button>
+                    </div>
+                    <div class="cal-grid" id="cal-day-labels"></div>
+                    <div class="cal-grid" id="cal-grid"></div>
+                </div>
+            </div>
+            <!-- Appointment list for selected day -->
+            <div class="dash-card" id="appt-day-card" style="margin-top:16px; display:none;">
+                <div class="card-header">
+                    <h3 id="appt-day-title"><i data-lucide="calendar-check"></i> นัดหมาย</h3>
+                </div>
+                <div id="appt-day-list"></div>
+            </div>
+        </main>
+
+        <!-- ── TAB 5: CUSTOMERS 360° ── -->
+        <main id="tab-customers" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="users"></i> ฐานข้อมูลลูกค้า 360° & ทะเบียนรถยนต์</h2>
+                <button class="btn-secondary" onclick="fillInput('เพิ่มลูกค้าใหม่');toggleCopilot()"><i data-lucide="cpu"></i> เพิ่มผ่าน AI</button>
+            </div>
+            <div class="dash-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>ชื่อลูกค้า</th><th>เบอร์โทรศัพท์</th><th>LINE</th><th>จำนวนรถ</th><th>ทะเบียนล่าสุด</th><th>งานซ่อมทั้งหมด</th><th>จัดการ</th></tr></thead>
+                        <tbody id="customers-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- ── TAB 6: STOCK ── -->
+        <main id="tab-stock" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="tags"></i> คลังสินค้า & สต๊อกอะไหล่</h2>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-secondary" onclick="fillInput('เพิ่มสต็อก น้ำมันเครื่อง 10');toggleCopilot()"><i data-lucide="cpu"></i> ปรับผ่าน AI</button>
+                    <button class="btn-primary" onclick="openAddStockModal()"><i data-lucide="plus"></i> เพิ่มอะไหล่</button>
+                </div>
+            </div>
+            <div class="dash-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>รหัส</th><th>รายการ</th><th>หมวด</th><th>ต้นทุน</th><th>ราคาขาย</th><th>คงเหลือ</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                        <tbody id="stock-tbody"><tr><td colspan="8" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Stock Change History -->
+            <div class="dash-card stock-history-panel" id="stock-history-section" style="margin-top:16px;">
+                <div class="card-header">
+                    <h3><i data-lucide="history"></i> ประวัติการเปลี่ยนแปลงสต๊อก</h3>
+                    <button class="btn-sm" onclick="loadStockHistory()"><i data-lucide="refresh-cw"></i></button>
+                </div>
+                <div id="stock-history-list"><p class="loading-msg" style="padding:16px;">กำลังโหลดประวัติ...</p></div>
+            </div>
+        </main>
+
+        <!-- ── TAB 7: PURCHASES ── -->
+        <main id="tab-purchases" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="truck"></i> ประวัติใบจัดซื้ออะไหล่</h2>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-secondary" onclick="fillInput('บิลจัดซื้อ');toggleCopilot()"><i data-lucide="scan-line"></i> สแกนบิล AI</button>
+                    <button class="btn-secondary" onclick="location.href='/scan'"><i data-lucide="camera"></i> สแกนรูปภาพ</button>
+                </div>
+            </div>
+            <div class="dash-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>เลขที่บิล</th><th>วันที่</th><th>ผู้จำหน่าย</th><th>รายการสินค้า</th><th>ยอดรวม</th><th>หมายเหตุ</th></tr></thead>
+                        <tbody id="purchases-tbody"><tr><td colspan="6" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- ── TAB 8: SUPPLIERS ── -->
+        <main id="tab-suppliers" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="building-2"></i> รายชื่อผู้จำหน่ายอะไหล่</h2>
+                <button class="btn-primary" onclick="openAddSupplierModal()"><i data-lucide="plus"></i> เพิ่มผู้จำหน่าย</button>
+            </div>
+            <div class="supplier-grid" id="supplier-grid">
+                <p class="loading-msg" style="padding:20px;">กำลังโหลด...</p>
+            </div>
+        </main>
+
+        <!-- ── TAB 9: REPORTS ── -->
+        <main id="tab-reports" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="pie-chart"></i> รายงานวิเคราะห์ประจำเดือน</h2>
+                <button class="btn-sm" onclick="loadReports()"><i data-lucide="refresh-cw"></i> รีเฟรช</button>
+            </div>
+            <div class="reports-grid" id="reports-grid">
+                <p class="loading-msg" style="padding:20px;">กำลังโหลดรายงาน...</p>
+            </div>
+        </main>
+
+        <!-- ── TAB 10: EXPENSES ── -->
+        <main id="tab-expenses" class="tab-content">
+            <div class="section-title-bar">
+                <h2><i data-lucide="banknote"></i> บันทึกค่าใช้จ่าย & บิล</h2>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-secondary" onclick="fillInput('ค่าไฟ 2800 บาท');toggleCopilot()"><i data-lucide="cpu"></i> เพิ่มผ่าน AI</button>
+                    <button class="btn-primary" onclick="openAddExpenseModal()"><i data-lucide="plus"></i> เพิ่มค่าใช้จ่าย</button>
+                </div>
+            </div>
+            <!-- Summary cards by category -->
+            <div class="expense-grid" id="expense-cat-grid"></div>
+            <!-- Expense list table -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <h3><i data-lucide="list"></i> รายการค่าใช้จ่ายทั้งหมด</h3>
+                    <span id="expense-total-badge" class="pill danger">฿0</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead><tr><th>วันที่</th><th>หมวดหมู่</th><th>รายละเอียด</th><th>จำนวนเงิน</th><th>บันทึกโดย</th><th>บิล</th></tr></thead>
+                        <tbody id="expenses-tbody"><tr><td colspan="6" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- ── TAB 11: SETTINGS ── -->
+        <main id="tab-settings" class="tab-content">
+            <div class="section-title-bar"><h2><i data-lucide="settings"></i> ตั้งค่าระบบ</h2></div>
+            <div class="dash-card">
+                <div class="form-group max-w-md">
+                    <label>Apps Script Webhook URL (Google Sheets Sync)</label>
+                    <input type="url" id="sheets-url" class="form-input" placeholder="https://script.google.com/macros/s/...">
+                    <button class="btn-primary mt-2" onclick="saveSheetUrl()"><i data-lucide="save"></i> บันทึก URL</button>
+                    <span id="sheets-status" class="sheets-status"></span>
+                </div>
+            </div>
+        </main>
+
+    </div><!-- /workspace-main -->
+
+    <!-- ── 3. AI COPILOT DRAWER ── -->
+    <div class="ai-copilot-drawer" id="ai-copilot-drawer">
+        <div class="copilot-header" onclick="toggleCopilot()">
+            <div class="copilot-title">
+                <div class="copilot-avatar"><i data-lucide="cpu"></i></div>
+                <div>
+                    <strong>R.O.S.E. AI Copilot Engine</strong>
+                    <small>ผู้ช่วยอัจฉริยะวิเคราะห์อาการ ออกบิล และคุมอู่</small>
+                </div>
+            </div>
+            <div class="copilot-controls">
+                <span class="kbd-shortcut">Ctrl + K</span>
+                <button class="btn-icon-sm"><i data-lucide="chevron-up" id="copilot-chevron"></i></button>
+            </div>
+        </div>
+        <div class="copilot-body" id="copilot-body">
+            <div class="agent-panel" id="agent-panel">
+                <div class="agent-panel-header">
+                    <div class="agent-panel-title">
+                        <span class="agent-pulse-dot"></span>
+                        <i data-lucide="git-branch"></i>
+                        <span id="agent-panel-label">R.O.S.E. Agent Pipeline</span>
+                    </div>
+                    <div class="agent-run-meta" id="agent-run-meta">Ready</div>
+                </div>
+                <div class="agent-pipeline-track" id="agent-pipeline-track"></div>
+            </div>
+            <div class="chat-thread" id="chat-thread">
+                <div class="msg-row bot">
+                    <div class="avatar-bot"><i data-lucide="cpu"></i></div>
+                    <div class="bubble bot-bubble">
+                        <p>สวัสดีครับ! พิมพ์คำสั่งได้เลยครับ เช่น:</p>
+                        <div class="example-chips">
+                            <span class="chip" onclick="fillInput('รถ Toyota Camry ทะเบียน กข 1234 กรุงเทพ มาเปลี่ยนน้ำมันเครื่อง')">📋 รับรถเข้าซ่อม</span>
+                            <span class="chip" onclick="fillInput('ค่าไฟ 2800 บาท')">💡 บันทึกค่าไฟ</span>
+                            <span class="chip" onclick="fillInput('เพิ่มสต็อก น้ำมันเครื่อง 10 ขวด')">📦 ปรับสต็อก</span>
+                            <span class="chip" onclick="fillInput('นัดลูกค้า เปลี่ยนยาง 10:00')">📅 นัดหมาย</span>
+                            <span class="chip" onclick="sendQuick('watchlist')">🚨 Watchlist</span>
+                            <span class="chip" onclick="sendQuick('summary')">📊 P&L</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="copilot-input-area">
+                <textarea id="chat-input" rows="1" placeholder="พิมพ์คำสั่งภาษาไทยที่นี่... (เช่น ค่าน้ำ 450 บาท, นัดลูกค้า 09:00, เพิ่มสต็อก)"></textarea>
+                <button class="send-btn" id="send-btn" onclick="sendMessage()"><i data-lucide="send"></i></button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /app-shell -->
+
+<!-- ── MODAL: INTAKE ── -->
+<div id="intake-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box large">
+        <h3><i data-lucide="file-text"></i> บันทึกใบประเมินช่าง</h3>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label>ทะเบียนรถ <span class="req">*</span></label>
+                <input type="text" id="intake-plate" class="form-input" placeholder="กข 1234 กรุงเทพ">
+            </div>
+            <div class="form-group">
+                <label>ชื่อช่าง <span class="req">*</span></label>
+                <input type="text" id="intake-mechanic" class="form-input" placeholder="ช่างสมชาย" value="ช่างสมชาย">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>ข้อความใบประเมิน <span class="req">*</span></label>
+            <textarea id="intake-raw" class="form-input" rows="4" placeholder="ผ้าเบรคหน้า 1,200 บาท, ค่าแรง 500 บาท รวม 1,700 บาท"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitIntakeModal()"><i data-lucide="scan-line"></i> สแกนอ่าน & บันทึก</button>
+            <button class="btn-cancel" onclick="closeIntakeModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: APPROVE ── -->
+<div id="approve-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <h3><i data-lucide="shield-check"></i> อนุมัติ Ticket <span id="approve-modal-id"></span></h3>
+        <div class="form-group">
+            <label>ชื่อช่างผู้อนุมัติ <span class="req">*</span></label>
+            <input type="text" id="approve-name" class="form-input" placeholder="ช่างสมชาย">
+        </div>
+        <div class="form-group">
+            <label>บันทึกความเห็น</label>
+            <textarea id="approve-notes" class="form-input" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+            <label>ปรับราคาสุทธิ (บาท)</label>
+            <input type="number" id="approve-cost" class="form-input" placeholder="เว้นว่างเพื่อใช้ราคา AI">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitApproval()"><i data-lucide="check"></i> ยืนยันอนุมัติ</button>
+            <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: ADD APPOINTMENT ── -->
+<div id="appt-modal" class="add-modal-overlay" style="display:none;">
+    <div class="add-modal-box">
+        <h3><i data-lucide="calendar-plus"></i> เพิ่มนัดหมายใหม่</h3>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ชื่อลูกค้า <span class="req">*</span></label>
+                <input type="text" id="appt-customer" class="form-input" placeholder="สมชาย มีสุข">
+            </div>
+            <div class="form-group">
+                <label>เบอร์โทร</label>
+                <input type="text" id="appt-phone" class="form-input" placeholder="0812345678">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ทะเบียนรถ</label>
+                <input type="text" id="appt-plate" class="form-input" placeholder="กข 1234 กรุงเทพ">
+            </div>
+            <div class="form-group">
+                <label>ยี่ห้อ / รุ่น</label>
+                <input type="text" id="appt-vehicle" class="form-input" placeholder="Toyota Camry">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>วันที่นัด <span class="req">*</span></label>
+                <input type="date" id="appt-date" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>เวลา</label>
+                <input type="time" id="appt-time" class="form-input" value="09:00">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>บริการที่ต้องการ</label>
+            <input type="text" id="appt-service" class="form-input" placeholder="เปลี่ยนน้ำมันเครื่อง + ตรวจเช็คช่วงล่าง">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitAppointment()"><i data-lucide="check"></i> บันทึกนัดหมาย</button>
+            <button class="btn-cancel" onclick="closeApptModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: ADD EXPENSE ── -->
+<div id="expense-modal" class="add-modal-overlay" style="display:none;">
+    <div class="add-modal-box">
+        <h3><i data-lucide="banknote"></i> เพิ่มค่าใช้จ่าย</h3>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>หมวดหมู่ <span class="req">*</span></label>
+                <select id="expense-cat" class="form-input">
+                    <option>ค่าไฟฟ้า</option>
+                    <option>ค่าน้ำประปา</option>
+                    <option>ค่าเช่า</option>
+                    <option>ค่าอินเทอร์เน็ต</option>
+                    <option>ค่าโทรศัพท์</option>
+                    <option>อื่นๆ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
+                <input type="number" id="expense-amount" class="form-input" placeholder="0.00">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>รายละเอียด</label>
+            <input type="text" id="expense-desc" class="form-input" placeholder="ค่าไฟฟ้าเดือนกันยายน 2026">
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>วันที่</label>
+                <input type="date" id="expense-date" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>บันทึกโดย</label>
+                <input type="text" id="expense-by" class="form-input" value="ผู้จัดการ">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitExpense()"><i data-lucide="check"></i> บันทึก</button>
+            <button class="btn-cancel" onclick="closeExpenseModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: ADD SUPPLIER ── -->
+<div id="supplier-modal" class="add-modal-overlay" style="display:none;">
+    <div class="add-modal-box">
+        <h3><i data-lucide="building-2"></i> เพิ่มผู้จำหน่ายใหม่</h3>
+        <div class="form-group">
+            <label>ชื่อร้าน / บริษัท <span class="req">*</span></label>
+            <input type="text" id="sup-name" class="form-input" placeholder="ร้านอะไหล่มีสุข">
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>เบอร์โทร</label>
+                <input type="text" id="sup-phone" class="form-input" placeholder="0812345678">
+            </div>
+            <div class="form-group">
+                <label>LINE ID</label>
+                <input type="text" id="sup-line" class="form-input" placeholder="@meesuk">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>อีเมล</label>
+            <input type="email" id="sup-email" class="form-input" placeholder="shop@email.com">
+        </div>
+        <div class="form-group">
+            <label>ที่อยู่</label>
+            <textarea id="sup-address" class="form-input" rows="2" placeholder="123 ถ.พระราม 4 กรุงเทพ"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitSupplier()"><i data-lucide="check"></i> บันทึก</button>
+            <button class="btn-cancel" onclick="closeSupplierModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── CUSTOMER 360° PROFILE MODAL ── -->
+<div id="profile-modal" class="profile-modal-overlay" style="display:none;">
+    <div class="profile-modal">
+        <div class="profile-modal-header">
+            <div>
+                <h2 id="profile-modal-name" style="font-size:1.2rem; font-weight:700;"></h2>
+                <div id="profile-modal-sub" style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;"></div>
+            </div>
+            <button class="profile-close-btn" onclick="closeProfileModal()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="profile-modal-body">
+            <div class="profile-stats-grid" id="profile-stats"></div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:8px;">🚗 รถของลูกค้า</div>
+                <div class="profile-car-chips" id="profile-cars"></div>
+            </div>
+            <div>
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:8px;">📋 ประวัติงานซ่อม</div>
+                <table class="profile-history-table">
+                    <thead><tr><th>#</th><th>วันที่</th><th>ทะเบียน</th><th>อาการ</th><th>ราคา</th><th>สถานะ</th></tr></thead>
+                    <tbody id="profile-history-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── BILL IMAGE VIEWER ── -->
+<div id="bill-img-overlay" class="bill-img-overlay" style="display:none;" onclick="closeBillImg()">
+    <img id="bill-img-el" src="" alt="ภาพบิล">
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="/static/chat.js?v=4.0.0"></script>
+</body>
+</html>
