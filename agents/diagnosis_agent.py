@@ -158,10 +158,75 @@ _DEFAULT_DIAGNOSIS = dict(
 )
 
 
+# ── Helper: Extract line items from free-form mechanic text ───────────────────
+import re as _re
+
+def _extract_line_items_from_text(text: str) -> List[Dict]:
+    """
+    Parse Thai mechanic free-text into structured line items.
+    Handles patterns like:
+      - เปลี่ยนยาง 4 เส้น 4000
+      - เปลี่ยนแม็ค 5000
+      - ผ้าเบรคหน้า 1,200 บาท
+      - ค่าแรง 500
+    Returns list of {name_th, qty, unit, unit_price, total, type}
+    """
+    items = []
+    # Split by newlines or semicolons
+    lines = _re.split(r'[\n;,｜|]+', text)
+    
+    # Pattern: (description) optionally (qty unit) (price)
+    # Examples: "เปลี่ยนยาง 4 เส้น 4000", "ค่าแรง 500 บาท", "เปลี่ยนน้ำมันเครื่อง 350"
+    price_pattern = _re.compile(
+        r'^(.+?)\s+'                       # description (non-greedy)
+        r'(?:(\d+(?:\.\d+)?)\s*'           # optional qty
+        r'([ก-๙a-zA-Z]{1,10})\s+)?'       # optional unit (Thai or EN letters)
+        r'([\d,]+(?:\.\d+)?)'              # price (digits, commas, optional decimals)
+        r'\s*(?:บาท|฿|bath|baht)?$',      # optional unit suffix
+        _re.IGNORECASE
+    )
+    
+    for line in lines:
+        line = line.strip()
+        if not line or len(line) < 2:
+            continue
+        m = price_pattern.match(line)
+        if m:
+            desc = m.group(1).strip()
+            qty_str = m.group(2)
+            unit = m.group(3) or 'รายการ'
+            price_str = m.group(4).replace(',', '')
+            try:
+                price = float(price_str)
+            except ValueError:
+                continue
+            qty = float(qty_str) if qty_str else 1.0
+            # Determine type: labor vs part
+            is_labor = any(kw in desc for kw in ['ค่าแรง', 'แรงงาน', 'ค่าบริการ', 'labor', 'Labour'])
+            item = {
+                'name_th': desc,
+                'name': desc,
+                'qty': qty,
+                'unit': unit,
+                'unit_price': price / qty if qty > 0 else price,
+                'total': price,
+                'type': 'labor' if is_labor else 'part',
+            }
+            items.append(item)
+    return items
+
+
 # ── Node 1: parse symptoms ────────────────────────────────────────────────────
 
 def _parse_symptoms_node(state: DiagnosisState) -> DiagnosisState:
     text = state["raw_input"]
+    
+    # First: try to extract explicit line items from mechanic text
+    extracted_items = _extract_line_items_from_text(text)
+    if extracted_items:
+        # We have structured items — no need for keyword matching
+        return {**state, "symptoms": [item['name_th'] for item in extracted_items], "line_items": extracted_items}
+    
     found = [s for s in _KNOWLEDGE_BASE if s in text]
     # Generic fallback: common action words
     if not found:

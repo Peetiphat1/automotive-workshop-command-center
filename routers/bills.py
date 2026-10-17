@@ -14,7 +14,8 @@ import logging
 import os
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+from models.db_models import get_local_now
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Dict, List, Optional
 
@@ -70,16 +71,15 @@ class BillConfirmRequest(BaseModel):
 # ── Gemini vision extraction ──────────────────────────────────────────────────
 
 def _extract_with_gemini(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
-    """Call Gemini 1.5 Flash vision to extract bill data. Falls back to mock on error."""
+    """Call Gemini 1.5 Flash vision REST API to extract bill data. Falls back gracefully on error."""
     try:
-        import google.generativeai as genai  # type: ignore
-        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        from services import ai_service
+        api_key = ai_service.get_configured_key("GEMINI_API_KEY") or ai_service.get_configured_key("GOOGLE_API_KEY")
         if not api_key:
             raise RuntimeError("No Gemini API key found")
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-
+        import httpx
+        models_to_try = ["gemini-flash-lite-latest", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gemini-flash-latest", "gemini-2.5-flash"]
         prompt = """You are reading a Thai automotive workshop bill/receipt.
 Extract ALL information and return ONLY valid JSON (no markdown, no explanation):
 
@@ -107,16 +107,42 @@ Rules:
 - If something is not found, use null
 - Return ONLY the JSON object, nothing else"""
 
-        image_part = {"mime_type": mime_type, "data": base64.b64encode(image_bytes).decode()}
-        response = model.generate_content([prompt, image_part])
-        raw = response.text.strip()
-        # Strip markdown code fences if present
-        raw = re.sub(r"^```(?:json)?\s*", "", raw)
-        raw = re.sub(r"\s*```$", "", raw)
-        return json.loads(raw)
+        b64_data = base64.b64encode(image_bytes).decode("utf-8")
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": b64_data,
+                            }
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 2048}
+        }
+
+        with httpx.Client(timeout=25.0) as client:
+            for model_name in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                res = client.post(url, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+                    raw = re.sub(r"\s*```$", "", raw)
+                    return json.loads(raw)
+                elif res.status_code == 404:
+                    continue
+                else:
+                    raise RuntimeError(f"Gemini API ({model_name}) returned status {res.status_code}: {res.text[:150]}")
+            raise RuntimeError("None of the Gemini models were available.")
 
     except Exception as e:
-        log.warning(f"Gemini extraction failed: {e} — using mock data")
+        log.warning(f"Gemini extraction failed: {e} — using fallback")
         return _mock_extraction()
 
 
@@ -129,7 +155,7 @@ def _mock_extraction() -> Dict[str, Any]:
         "vehicle_model": "Camry",
         "vehicle_brand": "Toyota",
         "mileage": 52000,
-        "bill_date": datetime.now().strftime("%d/%m/%Y"),
+        "bill_date": get_local_now().strftime("%d/%m/%Y"),
         "mechanic_name": "ช่างสมชาย",
         "line_items": [
             {"name": "เปลี่ยนผ้าเบรคหน้า", "qty": 1, "unit_price": 1200, "total": 1200},
@@ -173,7 +199,7 @@ async def scan_bill_photo(
     db: Session = Depends(get_db),
 ):
     """Upload a bill photo → AI extracts data → returns structured JSON for review."""
-    if not file.content_type.startswith("image/"):
+    if not (file.content_type or "").startswith("image/"):
         raise HTTPException(400, "File must be an image (jpg, png, heic, webp)")
 
     image_bytes = await file.read()
@@ -211,7 +237,7 @@ async def scan_bill_photo(
         "vehicle_model": extracted.get("vehicle_model"),
         "vehicle_brand": extracted.get("vehicle_brand"),
         "mileage": extracted.get("mileage"),
-        "bill_date": extracted.get("bill_date") or datetime.now().strftime("%d/%m/%Y"),
+        "bill_date": extracted.get("bill_date") or get_local_now().strftime("%d/%m/%Y"),
         "mechanic_name": extracted.get("mechanic_name"),
         "line_items": enriched_items,
         "labor_cost": labor_cost,
@@ -276,14 +302,14 @@ def confirm_bill(req: BillConfirmRequest, db: Session = Depends(get_db)):
         if req.fuel_type:      vehicle.fuel_type = req.fuel_type
         if req.transmission:   vehicle.transmission = req.transmission
         if req.mileage:        vehicle.current_mileage = req.mileage
-        vehicle.last_service_date = datetime.utcnow()
+        vehicle.last_service_date = get_local_now()
         # Update oil change tracking if oil change in line items
         names = " ".join(i.name.lower() for i in req.line_items)
         if any(k in names for k in ["น้ำมันเครื่อง", "oil", "engine oil"]):
-            vehicle.last_oil_change_date = datetime.utcnow()
+            vehicle.last_oil_change_date = get_local_now()
             vehicle.last_oil_change_mileage = req.mileage or vehicle.current_mileage
         if any(k in names for k in ["แบต", "battery"]):
-            vehicle.last_battery_date = datetime.utcnow()
+            vehicle.last_battery_date = get_local_now()
 
     # ── 3. Deduct stock ───────────────────────────────────────────────────────
     for item in req.line_items:
@@ -325,7 +351,7 @@ def confirm_bill(req: BillConfirmRequest, db: Session = Depends(get_db)):
         bill_type="income",
         vendor_name=req.customer_name or "ลูกค้า",
         confirmed_by="admin",
-        confirmed_at=datetime.utcnow(),
+        confirmed_at=get_local_now(),
         notes=req.notes,
         status="CONFIRMED",
     )
@@ -338,7 +364,7 @@ def confirm_bill(req: BillConfirmRequest, db: Session = Depends(get_db)):
         category="repair_service",
         amount=req.total,
         description=f"{req.vehicle_plate} — {', '.join(i.name for i in req.line_items[:3])}",
-        entry_date=datetime.utcnow(),
+        entry_date=get_local_now(),
     )
     db.add(ledger)
 

@@ -38,7 +38,9 @@ venv.bak/
 *.db
 *.sqlite
 *.sqlite3
+*.db.tmp
 workshop_demo.db
+*.tmp
 
 # IDE
 .idea/

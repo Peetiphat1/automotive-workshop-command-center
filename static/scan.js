@@ -1,6 +1,6 @@
 // ── R.O.S.E. Bill Scanner — scan.js ──────────────────────────────────────────
-const API_URL = 'http://127.0.0.1:8000/api/v1';
-const HEADERS = { 'X-API-Key': 'workshop-secret-2026' };
+const API_URL = '/api/v1';
+const HEADERS = {}; // X-API-Key is added by auth.js
 const JSON_HEADERS = { 'Content-Type': 'application/json', ...HEADERS };
 
 // ── State ────────────────────────────────────────────────────────────────────

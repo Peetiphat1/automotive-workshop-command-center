@@ -1,6 +1,6 @@
 // ─── Constants & Configuration ────────────────────────────────────────────────
-const API_URL = 'http://127.0.0.1:8000/api/v1';
-const API_KEY = 'workshop-secret-2026';
+const API_URL = '/api/v1';
+const API_KEY = ''; // real key is added by auth.js
 
 // Headers helper
 const getHeaders = () => {

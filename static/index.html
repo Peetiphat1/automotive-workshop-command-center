@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚗 Auto Service — Command Center & AI Copilot</title>
+    <title>🚗 Zero Garage — Command Center & AI Copilot</title>
     <meta name="description" content="ระบบหลังบ้านอัจฉริยะสำหรับศูนย์บริการและอู่ซ่อมรถยนต์ครบวงจร">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="/static/chat.css?v=4.0.0">
+    <script src="/static/vendor/lucide-1.59.0.min.js"></script>
+    <script src="/static/auth.js?v=20261017_3"></script>
+    <script src="/static/vendor/chart-4.5.1.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/chat.css?v=20260914_ui_fix_v5">
+    <link rel="stylesheet" href="/static/reports.css?v=20260913_2252">
     <style>
         /* ── CALENDAR ── */
         .calendar-wrap { padding: 16px; }
@@ -87,7 +90,10 @@
         .expense-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-bottom:16px; }
         .expense-cat-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; display:flex; align-items:center; gap:12px; }
         .expense-cat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
-        .bill-img-link { color:#60a5fa; font-size:0.75rem; cursor:pointer; text-decoration:underline; }
+        .bill-img-link { color:#60a5fa; font-size:0.75rem; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); transition:all 0.2s; }
+        .bill-img-link:hover { background:rgba(59,130,246,0.25); color:#ffffff; }
+        .btn-ticket-photo { display:inline-flex; align-items:center; gap:5px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.35); color:#93c5fd; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; text-decoration:none !important; cursor:pointer; transition:all 0.2s; margin-top:4px; }
+        .btn-ticket-photo:hover { background:rgba(59,130,246,0.3); border-color:#60a5fa; color:#ffffff; transform:translateY(-1px); }
         .bill-img-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:300; display:flex; align-items:center; justify-content:center; }
         .bill-img-overlay img { max-width:90vw; max-height:90vh; border-radius:12px; }
 
@@ -95,10 +101,8 @@
         .pos-history-filter { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
 
         /* ── MODAL FORM ── */
-        .add-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-        .add-modal-box { background:var(--bg-card-solid); border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:min(500px,96vw); padding:28px; }
-        .add-modal-box h3 { font-size:1.1rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-        .form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .add-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999 !important; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .add-modal-box { background:var(--bg-card-solid); border:1px solid rgba(255,255,255,0.1); border-radius:16px; width:min(500px,96vw); padding:28px; z-index:10000; }
     </style>
 </head>
 <body>
@@ -109,60 +113,61 @@
         <div class="sidebar-brand">
             <div class="brand-icon-wrap"><i data-lucide="wrench"></i></div>
             <div>
-                <h1>Auto Service</h1>
+                <h1>Zero Garage</h1>
                 <span>Command Center AI</span>
             </div>
         </div>
 
-        <div class="sidebar-section-label">MAIN SERVICE</div>
+        <div class="sidebar-section-label" data-i18n="nav_main_service">MAIN SERVICE</div>
         <nav class="side-nav">
             <a href="#" class="nav-item active" data-tab="dashboard" onclick="switchTab(event, 'dashboard')">
-                <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+                <i data-lucide="layout-dashboard"></i> <span data-i18n="nav_dashboard">Dashboard</span>
             </a>
             <a href="#" class="nav-item" data-tab="repairs" onclick="switchTab(event, 'repairs')">
-                <i data-lucide="wrench"></i> <span>งานซ่อม</span>
+                <i data-lucide="wrench"></i> <span data-i18n="nav_repairs">งานซ่อม</span>
                 <span class="badge" id="badge-repairs">0</span>
             </a>
             <a href="#" class="nav-item" data-tab="pos" onclick="switchTab(event, 'pos')">
-                <i data-lucide="receipt"></i> <span>ประวัติการซื้อ</span>
+                <i data-lucide="shopping-cart"></i> <span data-i18n="nav_pos">ขายอะไหล่ (POS)</span>
             </a>
             <a href="#" class="nav-item" data-tab="appointments" onclick="switchTab(event, 'appointments')">
-                <i data-lucide="calendar"></i> <span>นัดหมาย</span>
+                <i data-lucide="calendar"></i> <span data-i18n="nav_appointments">นัดหมาย</span>
             </a>
             <a href="#" class="nav-item" data-tab="customers" onclick="switchTab(event, 'customers')">
-                <i data-lucide="users"></i> <span>ลูกค้า & รถ</span>
+                <i data-lucide="users"></i> <span data-i18n="nav_customers">ลูกค้า & รถ</span>
             </a>
             <a href="#" class="nav-item" data-tab="stock" onclick="switchTab(event, 'stock')">
-                <i data-lucide="tags"></i> <span>คลัง/สต๊อก</span>
+                <i data-lucide="tags"></i> <span data-i18n="nav_stock">คลัง/สต๊อก</span>
                 <span class="badge danger" id="badge-stock-warn">0</span>
             </a>
             <a href="#" class="nav-item" data-tab="purchases" onclick="switchTab(event, 'purchases')">
-                <i data-lucide="truck"></i> <span>จัดซื้อ</span>
+                <i data-lucide="truck"></i> <span data-i18n="nav_purchases">จัดซื้อ</span>
             </a>
             <a href="#" class="nav-item" data-tab="suppliers" onclick="switchTab(event, 'suppliers')">
-                <i data-lucide="building-2"></i> <span>ผู้จำหน่าย</span>
+                <i data-lucide="building-2"></i> <span data-i18n="nav_suppliers">ผู้จำหน่าย</span>
             </a>
         </nav>
 
-        <div class="sidebar-section-label" style="margin-top:16px">FINANCE & REPORTS</div>
+        <div class="sidebar-section-label" data-i18n="nav_finance_reports" style="margin-top:16px">FINANCE & REPORTS</div>
         <nav class="side-nav">
             <a href="#" class="nav-item" data-tab="reports" onclick="switchTab(event, 'reports')">
-                <i data-lucide="pie-chart"></i> <span>รายงาน</span>
+                <i data-lucide="pie-chart"></i> <span data-i18n="nav_reports">รายงาน</span>
             </a>
             <a href="#" class="nav-item" data-tab="expenses" onclick="switchTab(event, 'expenses')">
-                <i data-lucide="banknote"></i> <span>ค่าใช้จ่าย</span>
+                <i data-lucide="banknote"></i> <span data-i18n="nav_expenses">ค่าใช้จ่าย</span>
             </a>
             <a href="#" class="nav-item" data-tab="settings" onclick="switchTab(event, 'settings')">
-                <i data-lucide="settings"></i> <span>ตั้งค่า</span>
+                <i data-lucide="settings"></i> <span data-i18n="nav_settings">ตั้งค่า</span>
             </a>
         </nav>
 
         <div class="sidebar-footer" style="margin-top:auto;">
             <div class="api-status">
                 <span class="status-dot online"></span>
-                <span>R.O.S.E. AI Engine Active</span>
+                <span data-i18n="api_status_text">R.O.S.E. AI Engine Active</span>
             </div>
-            <a href="/track" target="_blank" class="track-link"><i data-lucide="external-link"></i> Public Tracker</a>
+            <a href="/track" target="_blank" class="track-link"><i data-lucide="external-link"></i> <span data-i18n="nav_tracker">Public Tracker</span></a>
+            <a href="/manual" target="_blank" class="track-link" style="margin-top:6px; background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3);"><i data-lucide="book-open"></i> <span data-i18n="nav_manual">คู่มือการใช้งาน (Manual)</span></a>
         </div>
     </aside>
 
@@ -173,17 +178,24 @@
         <header class="top-header">
             <div class="header-search">
                 <i data-lucide="search"></i>
-                <input type="text" id="global-search" placeholder="ค้นหาเลขทะเบียน, ชื่อลูกค้า, เลขที่ Ticket หรือสินค้า..." onkeypress="handleGlobalSearch(event)">
+                <input type="text" id="global-search" data-i18n-placeholder="search_placeholder" placeholder="ค้นหาเลขทะเบียน, ชื่อลูกค้า, เลขที่ Ticket หรือสินค้า..." oninput="handleGlobalSearchInput(this.value)" onkeydown="handleGlobalSearch(event)" autocomplete="off">
+                <div id="global-search-dropdown" class="global-search-dropdown" style="display:none;"></div>
             </div>
             <div class="header-actions">
-                <button class="btn-primary" onclick="openNewIntakeModal()"><i data-lucide="plus-circle"></i> เปิดใบรับรถใหม่</button>
-                <button class="btn-secondary" onclick="openAddAppointmentModal()"><i data-lucide="calendar-plus"></i> นัดหมาย</button>
-                <button class="btn-icon" title="สแกนบิล" onclick="location.href='/scan'"><i data-lucide="scan-line"></i></button>
+                <!-- Language Switcher Pill -->
+                <div class="lang-switch-toggle" title="Switch Language / เปลี่ยนภาษา">
+                    <button type="button" class="lang-toggle-btn active" id="btn-lang-th" onclick="setAppLanguage('th')">🇹🇭 TH</button>
+                    <button type="button" class="lang-toggle-btn" id="btn-lang-en" onclick="setAppLanguage('en')">🇬🇧 EN</button>
+                </div>
+                <button class="btn-primary" onclick="openNewIntakeModal()"><i data-lucide="plus-circle"></i> <span data-i18n="btn_new_ticket">เปิดใบรับรถใหม่</span></button>
+                <button class="btn-secondary" onclick="openAddAppointmentModal()"><i data-lucide="calendar-plus"></i> <span data-i18n="btn_appointment">นัดหมาย</span></button>
+                <button class="btn-icon" data-i18n-title="btn_backup_title" title="สำรองและย้ายข้อมูล (Backup & Transfer)" onclick="goToBackupSettings()"><i data-lucide="database"></i></button>
+                <button class="btn-icon" data-i18n-title="btn_scan_title" title="สแกนบิล" onclick="location.href='/scan'"><i data-lucide="scan-line"></i></button>
                 <div class="user-profile">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Admin Avatar">
                     <div>
-                        <div class="user-name">ผู้จัดการอู่ (Admin)</div>
-                        <div class="user-role">สาขาหลัก (Bangkok)</div>
+                        <div class="user-name" data-i18n="user_name">ผู้จัดการอู่ (Admin)</div>
+                        <div class="user-role" data-i18n="user_role">สาขาหลัก (Bangkok)</div>
                     </div>
                 </div>
             </div>
@@ -193,58 +205,67 @@
         <main id="tab-dashboard" class="tab-content active">
             <div class="kpi-grid">
                 <div class="kpi-card income">
-                    <div class="kpi-header"><span>ยอดขายรวมเดือนนี้</span><div class="kpi-icon"><i data-lucide="trending-up"></i></div></div>
+                    <div class="kpi-header"><span data-i18n="kpi_revenue_title">ยอดขายรวมเดือนนี้</span><div class="kpi-icon"><i data-lucide="trending-up"></i></div></div>
                     <div class="kpi-value" id="kpi-revenue">฿0</div>
-                    <div class="kpi-sub green"><i data-lucide="arrow-up-right"></i> +14.2% จากเดือนที่แล้ว</div>
+                    <div class="kpi-sub" id="kpi-revenue-sub" style="color:var(--text-muted);" data-i18n="kpi_revenue_calc">กำลังคำนวณ...</div>
                 </div>
                 <div class="kpi-card active-repairs">
-                    <div class="kpi-header"><span>งานซ่อมกำลังดำเนินการ</span><div class="kpi-icon"><i data-lucide="wrench"></i></div></div>
+                    <div class="kpi-header"><span data-i18n="kpi_repairs_title">งานซ่อมกำลังดำเนินการ</span><div class="kpi-icon"><i data-lucide="wrench"></i></div></div>
                     <div class="kpi-value" id="kpi-active-repairs">0 คัน</div>
                     <div class="kpi-sub blue" id="kpi-pending-approval">รอช่างอนุมัติ 0 คัน</div>
                 </div>
                 <div class="kpi-card low-stock">
-                    <div class="kpi-header"><span>อะไหล่ใกล้หมดคลัง</span><div class="kpi-icon"><i data-lucide="alert-triangle"></i></div></div>
+                    <div class="kpi-header"><span data-i18n="kpi_stock_title">อะไหล่ใกล้หมดคลัง</span><div class="kpi-icon"><i data-lucide="alert-triangle"></i></div></div>
                     <div class="kpi-value" id="kpi-low-stock">0 รายการ</div>
-                    <div class="kpi-sub amber">ควรสั่งซื้อเพิ่มเพื่อรองรับงานซ่อม</div>
+                    <div class="kpi-sub amber" data-i18n="kpi_stock_sub">ควรสั่งซื้อเพิ่มเพื่อรองรับงานซ่อม</div>
                 </div>
-                <div class="kpi-card overdue">
-                    <div class="kpi-header"><span>นัดหมายวันนี้</span><div class="kpi-icon"><i data-lucide="calendar-check"></i></div></div>
-                    <div class="kpi-value" id="kpi-appointments">0 คัน</div>
-                    <div class="kpi-sub blue" id="kpi-appt-sub">คลิกดูปฏิทินนัดหมาย</div>
+                <div class="kpi-card overdue" onclick="switchTab(null, 'appointments')" style="cursor:pointer;" title="คลิกเพื่อเปิดดูปฏิทินนัดหมาย">
+                    <div class="kpi-header"><span data-i18n="kpi_appt_title">นัดหมายวันนี้</span><div class="kpi-icon"><i data-lucide="calendar-check"></i></div></div>
+                    <div class="kpi-value" id="kpi-appointments">0 นัด</div>
+                    <div class="kpi-sub blue" id="kpi-appt-sub" data-i18n="kpi_appt_sub">คลิกดูปฏิทินนัดหมาย ➔</div>
                 </div>
             </div>
 
             <div class="dashboard-body-grid">
                 <div class="dash-card main-table-card">
                     <div class="card-header">
-                        <h3><i data-lucide="clipboard-list"></i> ตารางงานซ่อมล่าสุด</h3>
+                        <h3><i data-lucide="clipboard-list"></i> <span data-i18n="recent_repairs_title">ตารางงานซ่อมล่าสุด</span></h3>
                         <div class="table-filter-pills">
-                            <button class="pill active" onclick="filterDashTickets(this, 'all')">ทั้งหมด</button>
-                            <button class="pill" onclick="filterDashTickets(this, 'PENDING_MECHANIC_APPROVAL')">รออนุมัติ</button>
-                            <button class="pill" onclick="filterDashTickets(this, 'APPROVED')">กำลังซ่อม</button>
+                            <button class="pill active" onclick="filterDashTickets(this, 'all')" data-i18n="filter_all">ทั้งหมด</button>
+                            <button class="pill" onclick="filterDashTickets(this, 'PENDING_MECHANIC_APPROVAL')" data-i18n="filter_pending">รออนุมัติ</button>
+                            <button class="pill" onclick="filterDashTickets(this, 'APPROVED')" data-i18n="filter_approved">กำลังซ่อม</button>
                         </div>
                     </div>
                     <div class="table-responsive">
                         <table class="data-table" id="tickets-table">
-                            <thead><tr><th>Ticket #</th><th>ทะเบียน / รุ่น</th><th>ลูกค้า</th><th>อาการ</th><th>ราคา</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
-                            <tbody id="tickets-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                            <thead><tr><th>Ticket #</th><th data-i18n="th_plate_model">ทะเบียน / รุ่น</th><th data-i18n="th_customer">ลูกค้า</th><th data-i18n="th_symptoms">อาการ</th><th data-i18n="th_price">ราคา</th><th data-i18n="th_status">สถานะ</th><th data-i18n="th_actions">จัดการ</th></tr></thead>
+                            <tbody id="tickets-tbody"><tr><td colspan="7" class="text-center py-4" data-i18n="loading_text">กำลังโหลด...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
                 <div class="dash-card-column">
                     <div class="dash-card">
                         <div class="card-header">
-                            <h3><i data-lucide="shield-alert"></i> Watchlist เตือนภัย</h3>
-                            <button class="btn-sm" onclick="fetchWatchlist()"><i data-lucide="refresh-cw"></i></button>
+                            <h3><i data-lucide="calendar-days"></i> <span data-i18n="upcoming_appts_title">นัดหมายเร็วๆ นี้ (Upcoming)</span></h3>
+                            <a href="#" onclick="switchTab(null,'appointments')" class="link-sm" data-i18n="view_calendar_link">ดูปฏิทินทั้งหมด</a>
                         </div>
-                        <div class="watchlist-list" id="watchlist-container"><p class="loading-msg">กำลังโหลด...</p></div>
+                        <div class="upcoming-appts-list" id="dashboard-appts-container" style="padding:10px 14px;">
+                            <p class="loading-msg" style="color:var(--text-muted);font-size:13px;text-align:center;padding:12px 0;" data-i18n="loading_text">กำลังโหลดนัดหมาย...</p>
+                        </div>
                     </div>
                     <div class="dash-card" style="margin-top:20px;">
                         <div class="card-header">
-                            <h3><i data-lucide="package"></i> สต๊อกด่วน</h3>
-                            <a href="#" onclick="switchTab(null,'stock')" class="link-sm">ดูทั้งหมด</a>
+                            <h3><i data-lucide="shield-alert"></i> <span data-i18n="watchlist_title">Watchlist เตือนภัย</span></h3>
+                            <button class="btn-sm" onclick="fetchWatchlist()"><i data-lucide="refresh-cw"></i></button>
                         </div>
-                        <div class="quick-stock-list" id="quick-stock-container"><p class="loading-msg">กำลังโหลด...</p></div>
+                        <div class="watchlist-list" id="watchlist-container"><p class="loading-msg" data-i18n="loading_text">กำลังโหลด...</p></div>
+                    </div>
+                    <div class="dash-card" style="margin-top:20px;">
+                        <div class="card-header">
+                            <h3><i data-lucide="package"></i> <span data-i18n="quick_stock_title">สต๊อกด่วน</span></h3>
+                            <a href="#" onclick="switchTab(null,'stock')" class="link-sm" data-i18n="view_all_link">ดูทั้งหมด</a>
+                        </div>
+                        <div class="quick-stock-list" id="quick-stock-container"><p class="loading-msg" data-i18n="loading_text">กำลังโหลด...</p></div>
                     </div>
                 </div>
             </div>
@@ -253,30 +274,50 @@
         <!-- ── TAB 2: REPAIRS ── -->
         <main id="tab-repairs" class="tab-content">
             <div class="section-title-bar">
-                <h2><i data-lucide="wrench"></i> การจัดการงานซ่อม</h2>
-                <button class="btn-primary" onclick="openNewIntakeModal()"><i data-lucide="plus"></i> เปิดใบรับรถใหม่</button>
+                <h2><i data-lucide="wrench"></i> การจัดการงานซ่อม (Repairs Hub)</h2>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" id="repairs-search-input" class="form-input" placeholder="🔍 ค้นหา (Ticket, ทะเบียน, ลูกค้า, ช่าง)..." oninput="filterRepairsTable()" style="max-width:280px;padding:6px 12px;font-size:0.84rem;">
+                    <button class="btn-primary" onclick="openNewIntakeModal()"><i data-lucide="plus"></i> เปิดใบรับรถใหม่</button>
+                </div>
+            </div>
+            <div class="table-filter-pills" style="margin-bottom:12px;">
+                <button class="pill active" onclick="filterRepairsStatus(this, 'all')">ทั้งหมด</button>
+                <button class="pill" onclick="filterRepairsStatus(this, 'PENDING_MECHANIC_APPROVAL')">รออนุมัติ</button>
+                <button class="pill" onclick="filterRepairsStatus(this, 'APPROVED')">กำลังซ่อม</button>
+                <button class="pill" onclick="filterRepairsStatus(this, 'COMPLETED')">ซ่อมเสร็จแล้ว</button>
             </div>
             <div class="dash-card">
                 <div id="full-repairs-table-container"></div>
             </div>
         </main>
 
-        <!-- ── TAB 3: POS → PURCHASE HISTORY ── -->
+        <!-- ── TAB 3: POS → PARTS SALES & REPAIR PARTS ── -->
         <main id="tab-pos" class="tab-content">
             <div class="section-title-bar">
-                <h2><i data-lucide="receipt"></i> ประวัติการซื้อ & อะไหล่ที่ใช้ในการซ่อม</h2>
-                <button class="btn-secondary" onclick="fillInput('บิลอะไหล่');toggleCopilot()"><i data-lucide="cpu"></i> เพิ่มผ่าน AI</button>
+                <h2><i data-lucide="shopping-cart"></i> <span data-i18n="pos_title">ประวัติการขายอะไหล่ (POS) & อะไหล่ที่ใช้ในงานซ่อม</span></h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-primary" onclick="openAddPOSModal()" style="background:#10b981;border-color:#10b981;">
+                        <i data-lucide="shopping-cart"></i> <span data-i18n="pos_manual_btn">+ คนซื้ออะไหล่ (POS)</span>
+                    </button>
+                    <button class="btn-secondary" onclick="openAddPurchaseModal()">
+                        <i data-lucide="truck"></i> <span>+ จัดซื้อเข้าอู่</span>
+                    </button>
+                    <button class="btn-secondary" onclick="fillInput('บิลอะไหล่');toggleCopilot()">
+                        <i data-lucide="cpu"></i> <span data-i18n="pos_ai_btn">เพิ่มผ่าน AI</span>
+                    </button>
+                </div>
             </div>
             <div class="dash-card">
                 <div class="pos-history-filter">
-                    <button class="pill active" onclick="filterPOSHistory(this,'all')">ทั้งหมด</button>
-                    <button class="pill" onclick="filterPOSHistory(this,'purchase')">📦 จัดซื้อ</button>
-                    <button class="pill" onclick="filterPOSHistory(this,'repair')">🔧 ใช้ในซ่อม</button>
+                    <button class="pill active" onclick="filterPOSHistory(this,'pos_sale')" data-i18n="pos_filter_sale">🛒 คนซื้ออะไหล่ (POS)</button>
+                    <button class="pill" onclick="filterPOSHistory(this,'all')" data-i18n="pos_filter_all">ทั้งหมด</button>
+                    <button class="pill" onclick="filterPOSHistory(this,'repair')" data-i18n="pos_filter_repair">🔧 ใช้ในซ่อม</button>
+                    <button class="pill" onclick="filterPOSHistory(this,'purchase')" data-i18n="pos_filter_purchase">📦 จัดซื้อเข้าอู่</button>
                 </div>
                 <div class="table-responsive">
                     <table class="data-table">
-                        <thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>ยอดรวม</th><th>อ้างอิง</th></tr></thead>
-                        <tbody id="pos-history-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลดประวัติ...</td></tr></tbody>
+                        <thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>ยอดรวม</th><th>ลูกค้า / อ้างอิง</th><th style="text-align:center;">จัดการ</th></tr></thead>
+                        <tbody id="pos-history-tbody"><tr><td colspan="8" class="text-center py-4">กำลังโหลดประวัติ...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -312,12 +353,16 @@
         <main id="tab-customers" class="tab-content">
             <div class="section-title-bar">
                 <h2><i data-lucide="users"></i> ฐานข้อมูลลูกค้า 360° & ทะเบียนรถยนต์</h2>
-                <button class="btn-secondary" onclick="fillInput('เพิ่มลูกค้าใหม่');toggleCopilot()"><i data-lucide="cpu"></i> เพิ่มผ่าน AI</button>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" id="cust-search-input" class="form-input" placeholder="🔍 ค้นหาชื่อ, เบอร์โทร, LINE, ทะเบียน..." oninput="filterCustomersTable()" style="max-width:260px;padding:6px 12px;font-size:0.84rem;">
+                    <button class="btn-primary" onclick="openAddCustomerModal()"><i data-lucide="user-plus"></i> เพิ่มลูกค้าใหม่</button>
+                    <button class="btn-secondary" onclick="fillInput('เพิ่มลูกค้าใหม่');toggleCopilot()"><i data-lucide="cpu"></i> AI</button>
+                </div>
             </div>
             <div class="dash-card">
                 <div class="table-responsive">
                     <table class="data-table">
-                        <thead><tr><th>ชื่อลูกค้า</th><th>เบอร์โทรศัพท์</th><th>LINE</th><th>จำนวนรถ</th><th>ทะเบียนล่าสุด</th><th>งานซ่อมทั้งหมด</th><th>จัดการ</th></tr></thead>
+                        <thead><tr><th>ชื่อลูกค้า</th><th>เบอร์โทรศัพท์</th><th>LINE ID</th><th>จำนวนรถ</th><th>ทะเบียนล่าสุด</th><th>งานซ่อมทั้งหมด</th><th>จัดการ</th></tr></thead>
                         <tbody id="customers-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
                     </table>
                 </div>
@@ -330,9 +375,49 @@
                 <h2><i data-lucide="tags"></i> คลังสินค้า & สต๊อกอะไหล่</h2>
                 <div style="display:flex;gap:8px;">
                     <button class="btn-secondary" onclick="fillInput('เพิ่มสต็อก น้ำมันเครื่อง 10');toggleCopilot()"><i data-lucide="cpu"></i> ปรับผ่าน AI</button>
-                    <button class="btn-primary" onclick="openAddStockModal()"><i data-lucide="plus"></i> เพิ่มอะไหล่</button>
+                    <button class="btn-scanner-inline" id="btn-barcode-stock" onclick="openStockScanner()"><i data-lucide="scan-barcode"></i> สแกนบาร์โค้ด</button>
+                    <button class="btn-secondary" onclick="fxOpenReorder()" title="อะไหล่ที่ต่ำกว่าจุดสั่งซื้อ จัดกลุ่มตามร้านที่ซื้อ"><i data-lucide="clipboard-list"></i> สั่งของที่ใกล้หมด</button>
+                    <button class="btn-secondary" onclick="fxPrintLabelsForTable()" title="พิมพ์ฉลากบาร์โค้ดของรายการที่แสดงในตาราง"><i data-lucide="tag"></i> พิมพ์ฉลาก</button>
+                    <button class="btn-primary" onclick="openAddStockModal()"><i data-lucide="plus"></i> เพิ่มอะไหล่ใหม่</button>
                 </div>
             </div>
+            <!-- Stock Search & Filter Toolbar -->
+            <div class="stock-search-toolbar" style="margin-bottom:14px; position:relative; z-index:20;">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <!-- Search Input with Dropdown -->
+                    <div style="position:relative; flex:1; min-width:280px;">
+                        <i data-lucide="search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-muted); pointer-events:none;"></i>
+                        <input type="text" id="stock-search-input" class="form-input" 
+                               placeholder="🔍 ค้นหาอะไหล่ (ชื่อ, SKU, หมวดหมู่) — ค้นหลายชิ้นใช้ , เช่น น้ำมันเครื่อง, กรองอากาศ"
+                               oninput="handleStockSearchInput(this.value)" 
+                               onkeydown="handleStockSearchKeydown(event)"
+                               autocomplete="off"
+                               style="padding-left:36px; padding-right:34px; width:100%; border-radius:8px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.12); font-size:0.88rem;">
+                        <button type="button" id="stock-search-clear-btn" onclick="clearStockSearch()" title="ล้างการค้นหา" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.1); border:none; color:var(--text-muted); cursor:pointer; font-size:12px; width:20px; height:20px; border-radius:50%; align-items:center; justify-content:center;">✕</button>
+                        
+                        <!-- Stock Live Autocomplete Dropdown -->
+                        <div id="stock-search-dropdown" class="global-search-dropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; min-width:100%; max-height:340px; z-index:1000;">
+                        </div>
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div id="stock-category-pills" style="display:flex; gap:6px; overflow-x:auto; padding:2px 0;">
+                        <!-- Injected dynamically in chat.js -->
+                    </div>
+                </div>
+
+                <!-- Active Filter Banner (shown when filtered down to one item or search query) -->
+                <div id="stock-active-filter-banner" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.35); border-radius:8px; align-items:center; justify-content:space-between; font-size:0.85rem; color:#93c5fd;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i data-lucide="filter" style="width:16px; height:16px; color:#60a5fa; flex-shrink:0;"></i>
+                        <span id="stock-active-filter-text">กำลังแสดงเฉพาะรายการ: <strong>...</strong></span>
+                    </div>
+                    <button type="button" class="btn-sm" onclick="clearStockSearch()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 12px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:0.8rem;">
+                        <i data-lucide="x" style="width:13px;height:13px;"></i> แสดงอะไหล่ทั้งหมด
+                    </button>
+                </div>
+            </div>
+
             <div class="dash-card">
                 <div class="table-responsive">
                     <table class="data-table">
@@ -355,7 +440,8 @@
         <main id="tab-purchases" class="tab-content">
             <div class="section-title-bar">
                 <h2><i data-lucide="truck"></i> ประวัติใบจัดซื้ออะไหล่</h2>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-primary" onclick="openAddPurchaseModal()"><i data-lucide="plus-circle"></i> <span data-i18n="pos_manual_btn">บันทึกจัดซื้อ (Manual)</span></button>
                     <button class="btn-secondary" onclick="fillInput('บิลจัดซื้อ');toggleCopilot()"><i data-lucide="scan-line"></i> สแกนบิล AI</button>
                     <button class="btn-secondary" onclick="location.href='/scan'"><i data-lucide="camera"></i> สแกนรูปภาพ</button>
                 </div>
@@ -363,8 +449,8 @@
             <div class="dash-card">
                 <div class="table-responsive">
                     <table class="data-table">
-                        <thead><tr><th>เลขที่บิล</th><th>วันที่</th><th>ผู้จำหน่าย</th><th>รายการสินค้า</th><th>ยอดรวม</th><th>หมายเหตุ</th></tr></thead>
-                        <tbody id="purchases-tbody"><tr><td colspan="6" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
+                        <thead><tr><th>เลขที่บิล</th><th>วันที่</th><th>ผู้จำหน่าย</th><th>รายการสินค้า</th><th>ยอดรวม</th><th>หมายเหตุ</th><th style="text-align:center;">จัดการ</th></tr></thead>
+                        <tbody id="purchases-tbody"><tr><td colspan="7" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -381,14 +467,544 @@
             </div>
         </main>
 
-        <!-- ── TAB 9: REPORTS ── -->
-        <main id="tab-reports" class="tab-content">
-            <div class="section-title-bar">
-                <h2><i data-lucide="pie-chart"></i> รายงานวิเคราะห์ประจำเดือน</h2>
-                <button class="btn-sm" onclick="loadReports()"><i data-lucide="refresh-cw"></i> รีเฟรช</button>
+        <!-- ── TAB 9: REPORTS (ศูนย์รวมรายงาน) ── -->
+        <main id="tab-reports" class="tab-content reports-container">
+            <!-- Header bar with Title -->
+            <div class="reports-header-bar">
+                <div class="reports-header-title" id="report-page-title">
+                    <i data-lucide="layout-grid"></i> ศูนย์รวมรายงาน
+                </div>
             </div>
-            <div class="reports-grid" id="reports-grid">
-                <p class="loading-msg" style="padding:20px;">กำลังโหลดรายงาน...</p>
+
+            <!-- 1. HUB VIEW: 7 Cards Grid -->
+            <div id="report-hub-view" class="subreport-view active">
+                <div class="reports-hub-grid">
+                    <!-- Card 1: รายงานยอดขาย -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('sales')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="trending-up" class="icon-sales"></i> รายงานยอดขาย
+                        </div>
+                        <div class="report-hub-card-desc">ยอดขายรายวัน แยกอะไหล่/งานซ่อม</div>
+                    </div>
+
+                    <!-- Card 2: อะไหล่ขายดี -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('topParts')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="flame" class="icon-hot"></i> อะไหล่ขายดี
+                        </div>
+                        <div class="report-hub-card-desc">สินค้าขายดีที่สุดตามช่วงเวลา</div>
+                    </div>
+
+                    <!-- Card 3: รายงานสต็อก -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('stock')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="package" class="icon-stock"></i> รายงานสต็อก
+                        </div>
+                        <div class="report-hub-card-desc">สต็อกคงเหลือและมูลค่าคลัง</div>
+                    </div>
+
+                    <!-- Card 4: รายงานช่าง -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('mechanics')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="wrench" class="icon-mechanic"></i> รายงานช่าง
+                        </div>
+                        <div class="report-hub-card-desc">ผลงานช่างและค่าคอมมิชชั่น</div>
+                    </div>
+
+                    <!-- Card 5: รายงานลูกค้า -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('customers')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="users" class="icon-customer"></i> รายงานลูกค้า
+                        </div>
+                        <div class="report-hub-card-desc">ลูกค้าที่ใช้จ่ายสูงสุด</div>
+                    </div>
+
+                    <!-- Card 6: กำไร-ขาดทุน -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('profit')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="coins" class="icon-profit"></i> กำไร-ขาดทุน
+                        </div>
+                        <div class="report-hub-card-desc">รายรับ - ต้นทุน - รายจ่าย</div>
+                    </div>
+
+                    <!-- New: daily close / job profit / outstanding -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('dailyClose')">
+                        <div class="report-hub-card-title"><i data-lucide="calendar-check" class="icon-sales"></i> ปิดยอดประจำวัน</div>
+                        <div class="report-hub-card-desc">เงินรับแยกเงินสด/โอน รายจ่าย อะไหล่ที่ใช้</div>
+                    </div>
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('jobProfit')">
+                        <div class="report-hub-card-title"><i data-lucide="badge-dollar-sign" class="icon-profit"></i> กำไรรายงาน</div>
+                        <div class="report-hub-card-desc">ยอดขาย − ทุนอะไหล่ ของแต่ละงาน</div>
+                    </div>
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('outstanding')">
+                        <div class="report-hub-card-title"><i data-lucide="hourglass" class="icon-customer"></i> ลูกค้าค้างชำระ</div>
+                        <div class="report-hub-card-desc">งานที่ยังเก็บเงินไม่ครบ</div>
+                    </div>
+
+                    <!-- Card 7: รายงานภาษีขาย -->
+                    <div class="report-hub-card" onclick="window.reportsApp.openReport('tax')">
+                        <div class="report-hub-card-title">
+                            <i data-lucide="file-text" class="icon-tax"></i> รายงานภาษีขาย
+                        </div>
+                        <div class="report-hub-card-desc">สำหรับยื่น ภพ.30</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SUB-REPORT: รายงานยอดขาย -->
+            <div id="report-sales-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="sales-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="sales-end-date" class="report-date-input">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('sales')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('sales_report', 'sales-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+
+                <div class="report-kpi-row">
+                    <div class="report-kpi-card">
+                        <div class="report-kpi-label">ยอดขายอะไหล่ (POS)</div>
+                        <div class="report-kpi-val blue" id="sales-kpi-parts">0.00</div>
+                    </div>
+                    <div class="report-kpi-card">
+                        <div class="report-kpi-label">ยอดงานซ่อม</div>
+                        <div class="report-kpi-val green" id="sales-kpi-repair">0.00</div>
+                    </div>
+                    <div class="report-kpi-card">
+                        <div class="report-kpi-label">รวมทั้งสิ้น</div>
+                        <div class="report-kpi-val" id="sales-kpi-grand">0.00</div>
+                    </div>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-card-heading">ยอดขายอะไหล่รายวัน</div>
+                    <div class="sales-chart-wrap">
+                        <canvas id="sales-daily-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-table-controls">
+                        <input type="text" id="sales-search-input" class="report-search-input" placeholder="ค้นหา...">
+                        <div class="report-entries-select">
+                            <span>แสดง</span>
+                            <select id="sales-entries-select">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>รายการ</span>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <table class="report-data-table" id="sales-table">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>เลขที่เอกสาร</th>
+                                    <th>ลูกค้า</th>
+                                    <th>ทะเบียนรถ</th>
+                                    <th>ประเภท</th>
+                                    <th class="text-right">ยอดเงิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-tbody">
+                                <tr><td colspan="6" class="empty-report-msg">กำลังโหลดข้อมูล...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-pagination" id="sales-pagination"></div>
+                </div>
+            </div>
+
+            <!-- 3. SUB-REPORT: อะไหล่ขายดี -->
+            <div id="report-topParts-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="topParts-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="topParts-end-date" class="report-date-input">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('topParts')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('top_parts_report', 'topparts-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-card-heading" id="topparts-card-title">อะไหล่ขายดี</div>
+                    <div class="report-table-controls" style="margin-top:16px;">
+                        <input type="text" id="topparts-search-input" class="report-search-input" placeholder="ค้นหา...">
+                        <div class="report-entries-select">
+                            <span>แสดง</span>
+                            <select id="topparts-entries-select">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>รายการ</span>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <table class="report-data-table" id="topparts-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width:70px;">อันดับ</th>
+                                    <th>SKU</th>
+                                    <th>ชื่อ</th>
+                                    <th class="text-center">จำนวนขาย</th>
+                                    <th class="text-right">ยอดเงิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topparts-tbody">
+                                <tr><td colspan="5" class="empty-report-msg">ไม่มีข้อมูลในช่วงเวลานี้</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-pagination" id="topparts-pagination"></div>
+                </div>
+            </div>
+
+            <!-- 4. SUB-REPORT: รายงานสต็อก -->
+            <div id="report-stock-view" class="subreport-view">
+                <div class="stock-top-kpi">
+                    <div>
+                        <div class="label">มูลค่าสต็อกรวม (ราคาทุน)</div>
+                        <div class="amount" id="stock-total-cost-val">0.00 ฿</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('stock_report', 'stock-report-table')"><i data-lucide="download"></i> Export CSV</button>
+                        <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                    </div>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-table-controls">
+                        <input type="text" id="stock-report-search" class="report-search-input" placeholder="ค้นหา...">
+                        <div class="report-entries-select">
+                            <span>แสดง</span>
+                            <select id="stock-report-entries-select">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>รายการ</span>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <table class="report-data-table" id="stock-report-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>ชื่อ</th>
+                                    <th>หมวด</th>
+                                    <th class="text-center">คงเหลือ</th>
+                                    <th class="text-right">ทุน/หน่วย</th>
+                                    <th class="text-right">มูลค่า</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-report-tbody">
+                                <tr><td colspan="6" class="empty-report-msg">กำลังโหลดข้อมูล...</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5"><strong>รวมมูลค่า</strong></td>
+                                    <td class="text-right font-mono" id="stock-footer-total" style="font-weight:700;color:#f8fafc;">0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="report-pagination" id="stock-report-pagination"></div>
+                </div>
+            </div>
+
+            <!-- 5. SUB-REPORT: รายงานช่าง -->
+            <div id="report-mechanics-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="mechanics-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="mechanics-end-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>% คอม (ของค่าแรง)</label>
+                        <input type="number" id="mechanics-commission" class="report-date-input" min="0" max="100" step="0.5" style="width:90px;" placeholder="ตั้งค่า">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('mechanics')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('mechanics_report', 'mechanics-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-card-heading" id="mechanics-card-title">ผลงานช่าง</div>
+                    <div class="report-table-controls" style="margin-top:16px;">
+                        <input type="text" id="mechanics-search-input" class="report-search-input" placeholder="ค้นหา...">
+                        <div class="report-entries-select">
+                            <span>แสดง</span>
+                            <select id="mechanics-entries-select">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>รายการ</span>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <table class="report-data-table" id="mechanics-table">
+                            <thead>
+                                <tr>
+                                    <th>ช่าง</th>
+                                    <th class="text-center">จำนวนงาน</th>
+                                    <th class="text-center">ซ่อมเสร็จ</th>
+                                    <th class="text-center">งานค้างในมือ</th>
+                                    <th class="text-right">ยอดขายรวม</th>
+                                    <th class="text-right">ค่าแรงรวม</th>
+                                    <th class="text-center">% คอม</th>
+                                    <th class="text-right">ค่าคอมมิชชั่น</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mechanics-tbody">
+                                <tr><td colspan="8" class="empty-report-msg">กำลังโหลดข้อมูล...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-pagination" id="mechanics-pagination"></div>
+                </div>
+            </div>
+
+            <!-- 6. SUB-REPORT: รายงานลูกค้า -->
+            <div id="report-customers-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="customers-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="customers-end-date" class="report-date-input">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('customers')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('customers_report', 'customers-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-card-heading" id="customers-card-title">ลูกค้าที่ใช้จ่ายสูงสุด</div>
+                    <div class="report-table-controls" style="margin-top:16px;">
+                        <input type="text" id="customers-search-input" class="report-search-input" placeholder="ค้นหา...">
+                        <div class="report-entries-select">
+                            <span>แสดง</span>
+                            <select id="customers-entries-select">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>รายการ</span>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <table class="report-data-table" id="customers-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width:70px;">อันดับ</th>
+                                    <th>ลูกค้า</th>
+                                    <th>เบอร์โทร</th>
+                                    <th class="text-center">จำนวนครั้ง</th>
+                                    <th class="text-center">แต้ม</th>
+                                    <th class="text-right">ยอดใช้จ่าย</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-customers-tbody">
+                                <tr><td colspan="6" class="empty-report-msg">กำลังโหลดข้อมูล...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-pagination" id="customers-pagination"></div>
+                </div>
+            </div>
+
+            <!-- 7. SUB-REPORT: กำไร-ขาดทุน -->
+            <div id="report-profit-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="profit-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="profit-end-date" class="report-date-input">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('profit')">แสดงรายงาน</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-card-heading" id="profit-card-title">งบกำไร-ขาดทุน</div>
+                    <div class="pnl-container" style="margin-top:20px;">
+                        <div class="pnl-row">
+                            <span>รายได้จากการขายอะไหล่</span>
+                            <span class="pnl-val font-mono" id="pnl-parts-rev">0.00</span>
+                        </div>
+                        <div class="pnl-row">
+                            <span>รายได้จากงานซ่อม</span>
+                            <span class="pnl-val font-mono" id="pnl-repair-rev">0.00</span>
+                        </div>
+                        <div class="pnl-row">
+                            <span>รายได้อื่น (บันทึกบัญชี / บิลรายรับที่สแกน)</span>
+                            <span class="pnl-val font-mono" id="pnl-other-rev">0.00</span>
+                        </div>
+                        <div class="pnl-row total-rev">
+                            <span>รวมรายได้</span>
+                            <span class="pnl-val font-mono" id="pnl-total-rev">0.00</span>
+                        </div>
+                        <div class="pnl-row cogs">
+                            <span>หัก ต้นทุนอะไหล่ที่ขาย/ใช้ไป (COGS)</span>
+                            <span class="pnl-val font-mono" id="pnl-cogs">-0.00</span>
+                        </div>
+                        <div class="pnl-row gross">
+                            <span>กำไรขั้นต้น</span>
+                            <span class="pnl-val font-mono" id="pnl-gross">0.00</span>
+                        </div>
+                        <div class="pnl-row opex">
+                            <span>หัก ค่าใช้จ่ายอื่นๆ (จัดการ)</span>
+                            <span class="pnl-val font-mono" id="pnl-opex">-0.00</span>
+                        </div>
+                        <div class="pnl-row net-profit">
+                            <span>กำไรสุทธิ</span>
+                            <span class="pnl-val font-mono val-green" id="pnl-net-profit">0.00</span>
+                        </div>
+                    </div>
+                    <div id="pnl-notes" style="margin-top:14px;font-size:0.8rem;color:var(--text-muted);line-height:1.7;"></div>
+                </div>
+            </div>
+
+            <!-- SUB-REPORT: ปิดยอดประจำวัน -->
+            <div id="report-dailyClose-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>วันที่</label>
+                        <input type="date" id="dailyClose-date" class="report-date-input" onchange="window.reportsApp.loadReportData('dailyClose')">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('dailyClose')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="fxReports.printDailyClose()"><i data-lucide="printer"></i> พิมพ์ใบปิดยอด</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+                <div id="fx-daily-close-body"></div>
+            </div>
+
+            <!-- SUB-REPORT: กำไรรายงาน -->
+            <div id="report-jobProfit-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="jobProfit-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="jobProfit-end-date" class="report-date-input">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('jobProfit')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('job_profit_report', 'fx-job-profit-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+                <div id="fx-job-profit-body"></div>
+            </div>
+
+            <!-- SUB-REPORT: ลูกค้าค้างชำระ -->
+            <div id="report-outstanding-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('outstanding')">รีเฟรช</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('outstanding_report', 'fx-outstanding-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+                <div id="fx-outstanding-body"></div>
+            </div>
+
+            <!-- 8. SUB-REPORT: รายงานภาษีขาย -->
+            <div id="report-tax-view" class="subreport-view">
+                <div class="report-filter-bar">
+                    <div class="report-date-group">
+                        <label>ตั้งแต่วันที่</label>
+                        <input type="date" id="tax-start-date" class="report-date-input">
+                    </div>
+                    <div class="report-date-group">
+                        <label>ถึงวันที่</label>
+                        <input type="date" id="tax-end-date" class="report-date-input">
+                    </div>
+                    <button class="btn-report-filter" onclick="window.reportsApp.loadReportData('tax')">แสดงรายงาน</button>
+                    <button class="btn-report-export" onclick="window.reportsApp.exportToCSV('tax_report', 'tax-table')"><i data-lucide="download"></i> Export CSV</button>
+                    <a class="report-back-link" onclick="window.reportsApp.showReportHub()"><i data-lucide="arrow-left"></i> ศูนย์รวมรายงาน</a>
+                </div>
+
+                <div class="report-kpi-row">
+                    <div class="report-kpi-card">
+                        <div class="report-kpi-label">มูลค่าก่อนภาษี</div>
+                        <div class="report-kpi-val" id="tax-kpi-pretax">0.00</div>
+                    </div>
+                    <div class="report-kpi-card">
+                        <div class="report-kpi-label">ภาษีขาย (VAT)</div>
+                        <div class="report-kpi-val blue" id="tax-kpi-vat">0.00</div>
+                    </div>
+                    <div class="report-kpi-card">
+                        <div class="report-kpi-label">รวมทั้งสิ้น</div>
+                        <div class="report-kpi-val" id="tax-kpi-grand">0.00</div>
+                    </div>
+                </div>
+
+                <div class="report-content-card">
+                    <div class="report-card-heading" id="tax-card-title">ภาษีขาย สำหรับยื่น ภพ.30</div>
+                    <div class="report-table-controls" style="margin-top:16px;">
+                        <input type="text" id="tax-search-input" class="report-search-input" placeholder="ค้นหา...">
+                        <div class="report-entries-select">
+                            <span>แสดง</span>
+                            <select id="tax-entries-select">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>รายการ</span>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <table class="report-data-table" id="tax-table">
+                            <thead>
+                                <tr>
+                                    <th>เลขที่เอกสาร</th>
+                                    <th>วันที่</th>
+                                    <th class="text-right">มูลค่าก่อนภาษี</th>
+                                    <th class="text-right">ภาษีขาย</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tax-tbody">
+                                <tr><td colspan="4" class="empty-report-msg">กำลังโหลดข้อมูล...</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2"><strong>รวม</strong></td>
+                                    <td class="text-right font-mono" id="tax-footer-pretax" style="font-weight:700;color:#f8fafc;">0.00</td>
+                                    <td class="text-right font-mono" id="tax-footer-vat" style="font-weight:700;color:#38bdf8;">0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="report-pagination" id="tax-pagination"></div>
+                </div>
+            </div>
+
+            <!-- Footer matching screenshot -->
+            <div class="reports-footer-credit">
+                ศูนย์บริการรถครบวงจร Auto Service · v1.0 · © 2026
             </div>
         </main>
 
@@ -411,7 +1027,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="data-table">
-                        <thead><tr><th>วันที่</th><th>หมวดหมู่</th><th>รายละเอียด</th><th>จำนวนเงิน</th><th>บันทึกโดย</th><th>บิล</th></tr></thead>
+                        <thead><tr><th>วันที่</th><th>หมวดหมู่</th><th>รายละเอียด</th><th>จำนวนเงิน</th><th>บันทึกโดย</th><th>บิล</th><th>จัดการ</th></tr></thead>
                         <tbody id="expenses-tbody"><tr><td colspan="6" class="text-center py-4">กำลังโหลด...</td></tr></tbody>
                     </table>
                 </div>
@@ -420,32 +1036,393 @@
 
         <!-- ── TAB 11: SETTINGS ── -->
         <main id="tab-settings" class="tab-content">
-            <div class="section-title-bar"><h2><i data-lucide="settings"></i> ตั้งค่าระบบ</h2></div>
-            <div class="dash-card">
-                <div class="form-group max-w-md">
-                    <label>Apps Script Webhook URL (Google Sheets Sync)</label>
-                    <input type="url" id="sheets-url" class="form-input" placeholder="https://script.google.com/macros/s/...">
-                    <button class="btn-primary mt-2" onclick="saveSheetUrl()"><i data-lucide="save"></i> บันทึก URL</button>
-                    <span id="sheets-status" class="sheets-status"></span>
+            <div class="section-title-bar">
+                <h2><i data-lucide="settings"></i> ตั้งค่าระบบ & AI Copilot</h2>
+            </div>
+
+            <div class="grid-2-col" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+                <!-- Card 1: AI Provider & API Keys -->
+                <div class="dash-card">
+                    <div class="dash-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="cpu" style="color: #6366f1;"></i> R.O.S.E. AI Engine & API Keys
+                        </h3>
+                        <span id="active-ai-badge" class="badge-pill badge-neutral">กำลังตรวจสอบ...</span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="display: flex; justify-content: space-between;">
+                            <span>Google Gemini API Key (แนะนำ - ใช้งานฟรี)</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #6366f1; font-size: 0.85rem; text-decoration: none;">
+                                <i data-lucide="external-link" style="width: 14px; height: 14px; vertical-align: middle;"></i> รับ API Key ฟรี
+                            </a>
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="password" id="gemini-key-input" class="form-input" placeholder="AIzaSy..." style="flex: 1;">
+                            <button type="button" class="btn-outline-sm" onclick="toggleKeyVisibility('gemini-key-input')">
+                                <i data-lucide="eye" id="eye-gemini-key-input"></i>
+                            </button>
+                        </div>
+                        <small style="color: #94a3b8;">ใช้ขับเคลื่อน AI Copilot, วิเคราะห์บิล (Vision OCR) และตอบคำถามอัจฉริยะ</small>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label>OpenAI API Key (ทางเลือกสำรอง)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="password" id="openai-key-input" class="form-input" placeholder="sk-..." style="flex: 1;">
+                            <button type="button" class="btn-outline-sm" onclick="toggleKeyVisibility('openai-key-input')">
+                                <i data-lucide="eye" id="eye-openai-key-input"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label>LINE OA Channel Access Token</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="password" id="line-token-input" class="form-input" placeholder="ใส่ Channel Token สำหรับส่งแจ้งเตือนจริง" style="flex: 1;">
+                            <button type="button" class="btn-outline-sm" onclick="toggleKeyVisibility('line-token-input')">
+                                <i data-lucide="eye" id="eye-line-token-input"></i>
+                            </button>
+                        </div>
+                        <small style="color: #94a3b8;">หากเว้นว่างจะใช้ระบบจำลอง (Simulation Mode) อัตโนมัติ</small>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn-primary" onclick="saveAISettings()">
+                            <i data-lucide="save"></i> บันทึกการตั้งค่า
+                        </button>
+                        <button class="btn-outline" onclick="testAIConnection('gemini')">
+                            <i data-lucide="zap"></i> ทดสอบ Gemini
+                        </button>
+                        <button class="btn-outline" onclick="testAIConnection('openai')">
+                            <i data-lucide="sparkles"></i> ทดสอบ OpenAI
+                        </button>
+                        <button class="btn-outline" style="border-color: #06c755; color: #06c755;" onclick="testLineConnection()">
+                            <i data-lucide="message-circle"></i> ทดสอบ LINE OA
+                        </button>
+                    </div>
+                    <div id="ai-test-result" style="margin-top: 14px; display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem;"></div>
                 </div>
+
+                <!-- Card 2: Google Sheets Sync & Human-in-the-Loop Policy -->
+                <div class="dash-card">
+                    <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="sheet" style="color: #10b981;"></i> Google Sheets Sync & Workshop Policy
+                    </h3>
+                    <div class="form-group mb-4">
+                        <label>Apps Script Webhook URL (Google Sheets Sync)</label>
+                        <input type="url" id="sheets-url" class="form-input" placeholder="https://script.google.com/macros/s/...">
+                        <button class="btn-outline mt-2" onclick="saveSheetUrl()">
+                            <i data-lucide="save"></i> บันทึก Webhook
+                        </button>
+                        <span id="sheets-status" class="sheets-status ml-2"></span>
+                    </div>
+
+                    <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px;">
+                        <h4 style="margin: 0 0 8px 0; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i> นโยบายการตรวจวินิจฉัย (Workshop Policy)
+                        </h4>
+                        <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                            ระบบปฏิบัติตามหลัก <strong>Mechanic-First / Human-in-the-Loop</strong> อย่างเคร่งครัด:
+                            การวินิจฉัยอาการและประเมินอะไหล่รถยนต์จริงต้องดำเนินการโดยช่างผู้เชี่ยวชาญหน้างานเท่านั้น
+                            AI ทำหน้าที่เป็นผู้ช่วยคุมอู่ ค้นหาสต็อก สรุปยอดเงิน นัดหมาย และเปิดใบรับรถเข้าตรวจ
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card: Finance, tax & system (shared by every computer) -->
+                <div class="dash-card">
+                    <h3 style="margin-top:0;margin-bottom:6px;font-size:1.1rem;display:flex;align-items:center;gap:8px;"><i data-lucide="landmark" style="color:#34d399;"></i> การเงิน ภาษี & ระบบ</h3>
+                    <p style="margin:0 0 14px;font-size:0.82rem;color:var(--text-muted);">ใช้ร่วมกันทุกเครื่องที่เปิดโปรแกรมนี้</p>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>เลขประจำตัวผู้เสียภาษี (13 หลัก)</label>
+                            <input type="text" id="fx-tax-id" class="form-input" maxlength="17" placeholder="0105555555555">
+                        </div>
+                        <div class="form-group">
+                            <label>ค่าคอมมิชชั่นช่าง (% ของค่าแรง)</label>
+                            <input type="number" id="fx-commission" class="form-input" min="0" max="100" step="0.5" placeholder="10">
+                        </div>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin:4px 0 14px;cursor:pointer;">
+                        <input type="checkbox" id="fx-vat"> จดทะเบียนภาษีมูลค่าเพิ่ม — พิมพ์ใบเสร็จเป็น "ใบกำกับภาษี" แยก VAT 7% (ราคาที่ขายรวม VAT แล้ว)
+                    </label>
+                    <div class="form-group">
+                        <label>ที่อยู่เว็บของร้าน (สำหรับลิงก์ให้ลูกค้ากดอนุมัติทาง LINE)</label>
+                        <input type="text" id="fx-public-url" class="form-input" placeholder="เช่น https://zerogarage.ngrok.app — เว้นว่าง = ใช้ที่อยู่ที่เปิดอยู่ตอนนี้">
+                    </div>
+                    <button type="button" class="btn-primary" onclick="fxSaveShopSettings()"><i data-lucide="save"></i> บันทึกการตั้งค่า</button>
+                </div>
+
+                <!-- Card 3: Workshop Profile & Paper Header -->
+                <div class="dash-card">
+                    <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="printer" style="color: #3b82f6;"></i> ข้อมูลอู่ & หัวกระดาษเอกสาร (Paper Header)
+                    </h3>
+                    <div class="form-group mb-3">
+                        <label>ชื่ออู่บนเอกสาร (Workshop Name)</label>
+                        <input type="text" id="settings-shop-name" class="form-input" value="Zero Garage" placeholder="เช่น Zero Garage">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>เบอร์โทรศัพท์บนเอกสาร (Phone Number on Paper) <span style="color:#10b981;font-weight:600;">(ใช้พิมพ์บนใบแจ้งงาน/ใบเสร็จ)</span></label>
+                        <input type="text" id="settings-shop-phone" class="form-input" value="095-418-5332" placeholder="เช่น 095-418-5332">
+                        <small style="color: #94a3b8;">เบอร์นี้จะแสดงบนหัวกระดาษของใบแจ้งงาน (Work Order) และใบเสร็จรับเงิน (Receipt/Invoice)</small>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label>ที่อยู่อู่ (Workshop Address)</label>
+                        <textarea id="settings-shop-address" class="form-input" rows="2" placeholder="ที่อยู่ศูนย์บริการ (ถ้ามี)"></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="saveShopProfileSettings()">
+                        <i data-lucide="save"></i> บันทึกข้อมูลหัวกระดาษ
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── CARD 4: DATA BACKUP & DEVICE TRANSFER ── -->
+            <div id="backup-transfer-section" class="dash-card" style="margin-top: 24px; border: 1px solid rgba(99, 102, 241, 0.35); background: linear-gradient(180deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%);">
+                <div class="dash-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 10px; color: #f8fafc;">
+                            <i data-lucide="database" style="color: #6366f1;"></i> สำรองและย้ายข้อมูล (Data Backup & Device Transfer)
+                        </h3>
+                        <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.85rem;">
+                            ส่งออกข้อมูลเพื่อนำไปเปิดใช้งานบนเครื่องอื่น (Export) หรือนำเข้าไฟล์ข้อมูลจากเครื่องอื่นกลับเข้ามา (Import)
+                        </p>
+                    </div>
+                    <button class="btn-outline-sm" onclick="loadBackupStats()" title="รีเฟรชข้อมูลสถิติ">
+                        <i data-lucide="refresh-cw"></i> รีเฟรชสถานะ
+                    </button>
+                </div>
+
+                <!-- Automatic daily backup -->
+                <div style="margin-bottom:18px;padding:14px 16px;border-radius:10px;border:1px solid rgba(52,211,153,0.35);background:rgba(52,211,153,0.06);">
+                    <div style="font-weight:700;color:#6ee7b7;margin-bottom:6px;display:flex;align-items:center;gap:8px;"><i data-lucide="shield-check" style="width:18px;height:18px;"></i> สำรองข้อมูลอัตโนมัติทุกวัน</div>
+                    <div id="fx-backup-status" style="font-size:0.84rem;color:var(--text-secondary);line-height:1.6;">กำลังโหลด...</div>
+                    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                        <input type="text" id="fx-backup-dir" class="form-input" style="flex:1;min-width:260px;" placeholder="โฟลเดอร์สำรองเพิ่มเติม เช่น E:\Backup หรือ C:\Users\Admin\Google Drive\ZeroGarage">
+                        <button type="button" class="btn-primary" onclick="fxRunBackupNow()"><i data-lucide="save"></i> บันทึกโฟลเดอร์ & สำรองเดี๋ยวนี้</button>
+                    </div>
+                </div>
+
+                <!-- Live Database Statistics Bar -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; padding: 14px; background: rgba(15, 23, 42, 0.6); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="text-align: center;">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block;">👥 ลูกค้า</span>
+                        <strong id="backup-stat-customers" style="font-size: 1.25rem; color: #38bdf8;">-</strong>
+                    </div>
+                    <div style="text-align: center; border-left: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block;">🚗 รถยนต์</span>
+                        <strong id="backup-stat-vehicles" style="font-size: 1.25rem; color: #818cf8;">-</strong>
+                    </div>
+                    <div style="text-align: center; border-left: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block;">🔧 งานซ่อม</span>
+                        <strong id="backup-stat-tickets" style="font-size: 1.25rem; color: #fbbf24;">-</strong>
+                    </div>
+                    <div style="text-align: center; border-left: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block;">📦 อะไหล่ในคลัง</span>
+                        <strong id="backup-stat-stock" style="font-size: 1.25rem; color: #34d399;">-</strong>
+                    </div>
+                    <div style="text-align: center; border-left: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block;">📄 บิล & ค่าใช้จ่าย</span>
+                        <strong id="backup-stat-bills" style="font-size: 1.25rem; color: #f472b6;">-</strong>
+                    </div>
+                    <div style="text-align: center; border-left: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 0.75rem; color: #94a3b8; display: block;">💾 ขนาดไฟล์ DB</span>
+                        <strong id="backup-stat-size" style="font-size: 1.25rem; color: #e2e8f0;">-</strong>
+                    </div>
+                </div>
+
+                <!-- 2-Column: Export vs Import -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                    
+                    <!-- Column 1: Export Data -->
+                    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px;">
+                        <h4 style="margin: 0 0 12px 0; color: #38bdf8; display: flex; align-items: center; gap: 8px; font-size: 1.05rem;">
+                            <i data-lucide="upload" style="transform: rotate(45deg);"></i> ส่งออกข้อมูล (Export Data)
+                        </h4>
+                        <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 16px; line-height: 1.4;">
+                            เลือกรูปแบบไฟล์ที่ต้องการดาวน์โหลดเพื่อนำไปเปิดใช้งานบนเครื่องอื่น หรือเก็บสำรองข้อมูลไว้:
+                        </p>
+
+                        <!-- Option 1: SQLite .db -->
+                        <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                <strong style="color: #f1f5f9; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="database" style="width: 16px; height: 16px; color: #38bdf8;"></i> ฐานข้อมูลฉบับเต็ม (.db)
+                                </strong>
+                                <span style="font-size: 0.7rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: 600;">แนะนำสำหรับการย้ายเครื่อง</span>
+                            </div>
+                            <p style="margin: 0 0 12px 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">
+                                บันทึกทุกตาราง ประวัติงานซ่อม ลูกค้า สต็อก การเงิน ทั้งหมด 100% สามารถนำไป Restore เข้าเครื่องอื่นได้ทันที
+                            </p>
+                            <button class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);" onclick="exportDatabaseFile()">
+                                <i data-lucide="download"></i> ดาวน์โหลดฐานข้อมูล (.db)
+                            </button>
+                        </div>
+
+                        <!-- Option 2: JSON -->
+                        <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                <strong style="color: #f1f5f9; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="file-code" style="width: 16px; height: 16px; color: #a855f7;"></i> ไฟล์ข้อมูล JSON (.json)
+                                </strong>
+                                <span style="font-size: 0.7rem; background: rgba(168, 85, 247, 0.15); color: #c084fc; padding: 2px 6px; border-radius: 4px;">Universal JSON</span>
+                            </div>
+                            <p style="margin: 0 0 12px 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">
+                                ส่งออกข้อมูลแบบข้อความ JSON สำหรับดูข้อมูล วิเคราะห์ใน Excel หรือเลือกผสานข้อมูล (Merge) ในเครื่องอื่น
+                            </p>
+                            <button class="btn-outline" style="width: 100%; justify-content: center;" onclick="exportJsonFile()">
+                                <i data-lucide="file-down"></i> ดาวน์โหลดไฟล์ JSON (.json)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Import Data -->
+                    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px;">
+                        <h4 style="margin: 0 0 12px 0; color: #10b981; display: flex; align-items: center; gap: 8px; font-size: 1.05rem;">
+                            <i data-lucide="download" style="transform: rotate(45deg);"></i> นำเข้าข้อมูล (Import / Restore)
+                        </h4>
+                        <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 16px; line-height: 1.4;">
+                            เลือกไฟล์สำรองข้อมูล (.db หรือ .json) ที่ส่งออกมาจากเครื่องเดิม เพื่อนำเข้ามาใช้งานในเครื่องนี้:
+                        </p>
+
+                        <!-- Drop Zone -->
+                        <div id="backup-dropzone" 
+                             style="border: 2px dashed rgba(99, 102, 241, 0.4); border-radius: 10px; padding: 24px 16px; text-align: center; background: rgba(15, 23, 42, 0.4); cursor: pointer; transition: all 0.2s ease;"
+                             onclick="document.getElementById('backup-file-input').click()"
+                             ondragover="handleBackupDragOver(event)"
+                             ondragleave="handleBackupDragLeave(event)"
+                             ondrop="handleBackupDrop(event)">
+                            <i data-lucide="upload-cloud" style="width: 38px; height: 38px; color: #818cf8; margin-bottom: 8px;"></i>
+                            <div style="font-weight: 500; color: #e2e8f0; font-size: 0.92rem;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+                            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">รองรับไฟล์ฐานข้อมูล (.db, .sqlite) หรือไฟล์ JSON (.json)</div>
+                            <input type="file" id="backup-file-input" accept=".db,.sqlite,.sqlite3,.json" style="display: none;" onchange="handleBackupFilePicked(this.files)">
+                        </div>
+
+                        <!-- Selected File Preview Info -->
+                        <div id="backup-file-preview" style="display: none; margin-top: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div id="backup-selected-name" style="font-weight: 600; color: #f8fafc; font-size: 0.9rem; word-break: break-all;">-</div>
+                                    <div id="backup-selected-size" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">-</div>
+                                </div>
+                                <span id="backup-selected-type" class="badge-pill badge-neutral">.DB</span>
+                            </div>
+
+                            <!-- JSON Options if JSON selected -->
+                            <div id="json-import-options" style="display: none; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 6px;">โหมดการนำเข้า (JSON Mode):</label>
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                    <label style="font-size: 0.82rem; color: #e2e8f0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                        <input type="radio" name="json-import-mode" value="replace" checked> แทนที่ข้อมูลทั้งหมด (Wipe & Replace)
+                                    </label>
+                                    <label style="font-size: 0.82rem; color: #e2e8f0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                        <input type="radio" name="json-import-mode" value="merge"> ผสานข้อมูลเดิม (Merge)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Safety Guarantee Notice -->
+                        <div style="display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 10px 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px;">
+                            <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #10b981; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div style="font-size: 0.78rem; color: #a7f3d0; line-height: 1.4;">
+                                <strong>ระบบปลอดภัย:</strong> ระบบจะสำรองข้อมูลปัจจุบันของเครื่องนี้เก็บไว้ให้อัตโนมัติในโฟลเดอร์ <code>backups/</code> ก่อนนำเข้าเสมอ หมดกังวลเรื่องข้อมูลสูญหาย
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 16px;">
+                            <button id="btn-do-import" class="btn-primary" style="width: 100%; justify-content: center; display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="confirmAndExecuteImport()">
+                                <i data-lucide="upload"></i> ยืนยันและเริ่มนำเข้าข้อมูล (Import Now)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: How to transfer guide -->
+                <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: #f59e0b; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                        <i data-lucide="help-circle" style="width: 16px; height: 16px;"></i> วิธีย้ายข้อมูลไปใช้งานเครื่องอื่น ใน 3 ขั้นตอนง่ายๆ
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: #38bdf8; color: #0f172a; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">1</div>
+                            <div>
+                                <strong style="color: #f1f5f9;">เครื่องต้นทาง:</strong> กดปุ่ม <em>"ดาวน์โหลดฐานข้อมูล (.db)"</em> เพื่อรับไฟล์สำรองข้อมูลล่าสุด
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: #818cf8; color: #0f172a; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">2</div>
+                            <div>
+                                <strong style="color: #f1f5f9;">ส่งไฟล์:</strong> คัดลอกไฟล์ใส่ Flash Drive, ส่งเข้า LINE ตัวเอง หรืออัปโหลดเข้า Google Drive
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: #34d399; color: #0f172a; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">3</div>
+                            <div>
+                                <strong style="color: #f1f5f9;">เครื่องปลายทาง:</strong> เปิดโปรแกรม เข้าเมนูตั้งค่า แล้วคลิกนำเข้าไฟล์ (.db) ข้อมูลจะพร้อมใช้งานทันที!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Safety Backups History Table (collapsible) -->
+                <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleBackupHistory()">
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="history" style="width: 16px; height: 16px;"></i> ประวัติจุดสำรองข้อมูลอัตโนมัติ (Safety Backups)
+                            <span id="backup-history-count" class="badge-pill badge-neutral">0 จุด</span>
+                        </span>
+                        <i data-lucide="chevron-down" id="backup-history-chevron" style="transition: transform 0.2s;"></i>
+                    </div>
+                    <div id="backup-history-container" style="display: none; margin-top: 12px;">
+                        <div id="backup-history-list" style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="color: #94a3b8; font-size: 0.85rem; padding: 8px;">ยังไม่มีจุดสำรองข้อมูล</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 5: Danger Zone (Factory Reset / Clear All Data) -->
+                <div style="border-top: 1px solid rgba(239, 68, 68, 0.25); margin-top: 16px; background: rgba(239, 68, 68, 0.04); border-radius: 8px; padding: 16px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div style="font-weight: 700; color: #f87171; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                                <i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: #ef4444;"></i>
+                                พื้นที่อันตราย: ล้างข้อมูลทั้งหมดในระบบ (Danger Zone)
+                            </div>
+                            <div style="font-size: 0.82rem; color: #94a3b8; margin-top: 4px; line-height: 1.4;">
+                                ล้างงานซ่อม, ลูกค้า, รถยนต์, สต็อก, บิล, ผู้จำหน่าย และนัดหมายทั้งหมด (ระบบจะสำรองข้อมูลอัตโนมัติให้ก่อนล้าง)
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm" style="background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="openWipeConfirmModal()">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> ล้างข้อมูลทั้งหมด (Reset All Data)
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </main>
 
     </div><!-- /workspace-main -->
 
     <!-- ── 3. AI COPILOT DRAWER ── -->
-    <div class="ai-copilot-drawer" id="ai-copilot-drawer">
+    <div class="ai-copilot-drawer collapsed" id="ai-copilot-drawer">
         <div class="copilot-header" onclick="toggleCopilot()">
             <div class="copilot-title">
                 <div class="copilot-avatar"><i data-lucide="cpu"></i></div>
-                <div>
-                    <strong>R.O.S.E. AI Copilot Engine</strong>
-                    <small>ผู้ช่วยอัจฉริยะวิเคราะห์อาการ ออกบิล และคุมอู่</small>
+                <div class="copilot-title-info">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <strong>R.O.S.E. AI Copilot</strong>
+                        <span id="copilot-engine-badge" style="font-size: 0.68rem; padding: 1px 7px; border-radius: 9999px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); white-space: nowrap;">
+                            ⚡ AI Copilot Ready
+                        </span>
+                    </div>
+                    <small>ผู้ช่วยอัจฉริยะคุมอู่ สต็อก การเงิน (ช่างตรวจสภาพจริง)</small>
                 </div>
             </div>
             <div class="copilot-controls">
                 <span class="kbd-shortcut">Ctrl + K</span>
-                <button class="btn-icon-sm"><i data-lucide="chevron-up" id="copilot-chevron"></i></button>
+                <button class="btn-icon-sm" title="ย่อ/ขยาย"><i data-lucide="chevron-up" id="copilot-chevron" style="transform: rotate(0deg);"></i></button>
             </div>
         </div>
         <div class="copilot-body" id="copilot-body">
@@ -476,8 +1453,19 @@
                     </div>
                 </div>
             </div>
+            <div id="chat-img-preview-wrap" class="chat-img-preview-wrap" style="display:none;">
+                <div class="chat-img-preview-box">
+                    <img id="chat-img-preview-el" src="" alt="ภาพที่แนบ">
+                    <button type="button" class="chat-img-remove-btn" onclick="removeChatAttachedImage()" title="ลบรูป">✕</button>
+                </div>
+                <span id="chat-img-filename" class="chat-img-filename"></span>
+            </div>
             <div class="copilot-input-area">
-                <textarea id="chat-input" rows="1" placeholder="พิมพ์คำสั่งภาษาไทยที่นี่... (เช่น ค่าน้ำ 450 บาท, นัดลูกค้า 09:00, เพิ่มสต็อก)"></textarea>
+                <input type="file" id="chat-file-input" accept="image/*" style="display:none;" onchange="handleChatImageSelected(event)">
+                <button type="button" class="chat-attach-btn" id="chat-attach-btn" onclick="document.getElementById('chat-file-input').click()" title="แนบรูปภาพ (บิลค่าใช้จ่าย, เปิดใบรับรถ, รูปรถ)">
+                    <i data-lucide="image"></i>
+                </button>
+                <textarea id="chat-input" rows="1" placeholder="พิมพ์คำสั่งหรือแนบรูปภาพ... (เช่น เปิดใบรับรถ, บันทึกบิล, ค่าไฟ 2800)"></textarea>
                 <button class="send-btn" id="send-btn" onclick="sendMessage()"><i data-lucide="send"></i></button>
             </div>
         </div>
@@ -485,58 +1473,369 @@
 
 </div><!-- /app-shell -->
 
-<!-- ── MODAL: INTAKE ── -->
+<!-- ── MODAL: INTAKE (ใบแจ้งงาน) ── -->
 <div id="intake-modal" class="modal-backdrop" style="display:none;">
-    <div class="modal-box large">
-        <h3><i data-lucide="file-text"></i> บันทึกใบประเมินช่าง</h3>
-        <div class="form-grid-2">
-            <div class="form-group">
-                <label>ทะเบียนรถ <span class="req">*</span></label>
-                <input type="text" id="intake-plate" class="form-input" placeholder="กข 1234 กรุงเทพ">
+    <div class="modal-box" style="width:min(720px,96vw);max-height:92vh;overflow-y:auto;">
+        <h3><i data-lucide="file-text"></i> เปิดงานซ่อมใหม่ — ใบแจ้งงาน</h3>
+
+        <!-- ── ข้อมูลรถและลูกค้า ── -->
+        <div style="margin-bottom:14px;padding:12px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#a5b4fc;margin-bottom:10px;">🚗 ข้อมูลรถและลูกค้า</div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>ทะเบียนรถ <span class="req">*</span></label>
+                    <input type="text" id="intake-plate" class="form-input" placeholder="กข 1234 กรุงเทพ">
+                </div>
+                <div class="form-group">
+                    <label>ยี่ห้อ / รุ่นรถ</label>
+                    <input type="text" id="intake-car-model" class="form-input" placeholder="Toyota Camry">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อลูกค้า</label>
+                    <input type="text" id="intake-customer" class="form-input" placeholder="สมชาย มีสุข">
+                </div>
+                <div class="form-group">
+                    <label>เบอร์โทร</label>
+                    <input type="text" id="intake-phone" class="form-input" placeholder="0812345678">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label style="display:flex;align-items:center;gap:6px;"><i data-lucide="message-circle" style="width:14px;height:14px;color:#22c55e;"></i> LINE ID (สำหรับแจ้งเตือนสถานะซ่อม & ใบเสร็จ)</label>
+                    <input type="text" id="intake-line-id" class="form-input" placeholder="เช่น sommai_line หรือ @lineid">
+                </div>
             </div>
+            <div id="fx-warranty-banner" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.35);color:#6ee7b7;"></div>
+        </div>
+
+        <!-- ── รายการซ่อม ── -->
+        <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#34d399;">🔧 รายการซ่อม / อะไหล่</div>
+                <button type="button" onclick="addIntakeLine()" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:#34d399;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;"><i data-lucide="plus" style="width:13px;height:13px;"></i> เพิ่มรายการ</button>
+            </div>
+            <div id="intake-lines-container">
+                <!-- Line items will be injected here -->
+            </div>
+            <div style="margin-top:10px;text-align:right;font-size:0.85rem;color:var(--text-secondary);">
+                ยอดรวมโดยประมาณ: <strong id="intake-total-display" style="color:#34d399;font-size:1rem;">฿0</strong>
+            </div>
+        </div>
+
+        <!-- ── ช่างและหมายเหตุ ── -->
+        <div class="form-grid-2" style="margin-bottom:10px;">
             <div class="form-group">
                 <label>ชื่อช่าง <span class="req">*</span></label>
                 <input type="text" id="intake-mechanic" class="form-input" placeholder="ช่างสมชาย" value="ช่างสมชาย">
             </div>
+            <div class="form-group">
+                <label>เลขไมล์ (กม.)</label>
+                <input type="number" id="intake-mileage" class="form-input" placeholder="50000">
+            </div>
         </div>
         <div class="form-group">
-            <label>ข้อความใบประเมิน <span class="req">*</span></label>
-            <textarea id="intake-raw" class="form-input" rows="4" placeholder="ผ้าเบรคหน้า 1,200 บาท, ค่าแรง 500 บาท รวม 1,700 บาท"></textarea>
+            <label>หมายเหตุ / อาการที่ลูกค้าแจ้ง</label>
+            <textarea id="intake-raw" class="form-input" rows="2" placeholder="เสียงดัง เมื่อเบรค / น้ำมันรั่ว ..."></textarea>
         </div>
+
         <div class="modal-actions">
-            <button class="btn-primary" onclick="submitIntakeModal()"><i data-lucide="scan-line"></i> สแกนอ่าน & บันทึก</button>
+            <button class="btn-primary" onclick="submitIntakeModal()"><i data-lucide="save"></i> บันทึกและเปิดงาน</button>
+            <button type="button" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);color:#fb923c;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:600;font-size:0.88rem;display:flex;align-items:center;gap:7px;" onclick="previewWorkOrder()"><i data-lucide="printer"></i> ดูตัวอย่าง & พิมพ์ใบแจ้งงาน</button>
             <button class="btn-cancel" onclick="closeIntakeModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: EDIT TICKET ── -->
+<div id="edit-ticket-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box" style="width:min(720px,96vw);max-height:92vh;overflow-y:auto;">
+        <h3><i data-lucide="pencil"></i> แก้ไขงานซ่อม <span id="edit-ticket-title-id"></span></h3>
+
+        <div style="margin-bottom:14px;padding:12px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#a5b4fc;margin-bottom:10px;">🚗 ข้อมูลรถและลูกค้า</div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>ทะเบียนรถ</label>
+                    <input type="text" id="edit-ticket-plate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>ยี่ห้อ / รุ่นรถ</label>
+                    <input type="text" id="edit-ticket-car-model" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อลูกค้า</label>
+                    <input type="text" id="edit-ticket-customer" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>เบอร์โทร</label>
+                    <input type="text" id="edit-ticket-phone" class="form-input">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>LINE ID</label>
+                    <input type="text" id="edit-ticket-line-id" class="form-input">
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#34d399;">🔧 รายการซ่อม / อะไหล่ (จำนวน × ราคาต่อหน่วย)</div>
+                <button type="button" onclick="addIntakeLine('', '', 'edit-ticket-lines')" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:#34d399;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;"><i data-lucide="plus" style="width:13px;height:13px;"></i> เพิ่มรายการ</button>
+            </div>
+            <div id="edit-ticket-lines"></div>
+            <div style="margin-top:10px;text-align:right;font-size:0.85rem;color:var(--text-secondary);">
+                ยอดรวมรายการ: <strong id="edit-ticket-total-display" style="color:#34d399;font-size:1rem;">฿0</strong>
+            </div>
+        </div>
+
+        <div class="form-grid-2" style="margin-bottom:10px;">
+            <div class="form-group">
+                <label>ชื่อช่าง</label>
+                <input type="text" id="edit-ticket-mechanic" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>เลขไมล์ (กม.)</label>
+                <input type="number" id="edit-ticket-mileage" class="form-input" min="0">
+            </div>
+            <div class="form-group">
+                <label>สถานะ</label>
+                <select id="edit-ticket-status" class="form-input">
+                    <option value="DRAFT_ESTIMATE">📝 ร่างใบประเมิน</option>
+                    <option value="PENDING_MECHANIC_APPROVAL">⏳ รออนุมัติ</option>
+                    <option value="APPROVED">✅ อนุมัติแล้ว</option>
+                    <option value="IN_PROGRESS">🔧 กำลังซ่อม</option>
+                    <option value="COMPLETED">🏁 ซ่อมเสร็จ</option>
+                    <option value="CANCELLED">❌ ยกเลิก</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ราคาสุทธิ (บาท) — เว้นว่าง = ใช้ยอดรวมรายการ</label>
+                <input type="number" id="edit-ticket-final-cost" class="form-input" min="0" step="0.01">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>บันทึกของช่าง</label>
+            <textarea id="edit-ticket-notes" class="form-input" rows="2"></textarea>
+        </div>
+        <div class="form-grid-2" style="margin-bottom:10px;">
+            <div class="form-group">
+                <label>🛡️ รับประกัน (เดือน)</label>
+                <input type="number" id="edit-ticket-warranty-months" class="form-input" min="0" max="120" step="1" placeholder="0 = ไม่มีประกัน">
+            </div>
+            <div class="form-group">
+                <label>รับประกันอะไร</label>
+                <input type="text" id="edit-ticket-warranty-note" class="form-input" maxlength="300" placeholder="เช่น แบตเตอรี่ 12 เดือน">
+            </div>
+        </div>
+        <div style="margin-bottom:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#93c5fd;margin-bottom:8px;">📸 รูปงาน (พิมพ์ลงใบเสร็จได้)</div>
+            <div id="edit-ticket-photos"></div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitEditTicket()"><i data-lucide="save"></i> บันทึกการแก้ไข</button>
+            <button class="btn-cancel" onclick="closeEditTicketModal()">ยกเลิก</button>
         </div>
     </div>
 </div>
 
 <!-- ── MODAL: APPROVE ── -->
 <div id="approve-modal" class="modal-backdrop" style="display:none;">
-    <div class="modal-box">
-        <h3><i data-lucide="shield-check"></i> อนุมัติ Ticket <span id="approve-modal-id"></span></h3>
+    <div class="modal-box" style="width:min(550px,95vw);">
+        <h3><i data-lucide="shield-check"></i> อนุมัติเริ่มงาน Ticket <span id="approve-modal-id"></span></h3>
+        <div id="approve-ticket-summary" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:0.85rem;">
+            <!-- Loaded dynamically in chat.js -->
+        </div>
         <div class="form-group">
-            <label>ชื่อช่างผู้อนุมัติ <span class="req">*</span></label>
+            <label>ชื่อช่างผู้อนุมัติเริ่มงาน <span class="req">*</span></label>
             <input type="text" id="approve-name" class="form-input" placeholder="ช่างสมชาย">
         </div>
         <div class="form-group">
-            <label>บันทึกความเห็น</label>
-            <textarea id="approve-notes" class="form-input" rows="2"></textarea>
+            <label>บันทึกความเห็นช่าง</label>
+            <textarea id="approve-notes" class="form-input" rows="2" placeholder="ระบุผลตรวจสภาพรถเบื้องต้น หรือหมายเหตุ"></textarea>
         </div>
         <div class="form-group">
-            <label>ปรับราคาสุทธิ (บาท)</label>
-            <input type="number" id="approve-cost" class="form-input" placeholder="เว้นว่างเพื่อใช้ราคา AI">
+            <label>ยืนยันยอดราคาประเมิน (บาท) <span style="font-size:0.75rem;color:var(--text-muted);">(ปรับเปลี่ยนได้ตามจริง)</span></label>
+            <input type="number" id="approve-cost" class="form-input" step="0.01" min="0" placeholder="ระบุราคา">
         </div>
         <div class="modal-actions">
-            <button class="btn-primary" onclick="submitApproval()"><i data-lucide="check"></i> ยืนยันอนุมัติ</button>
+            <button class="btn-primary" onclick="submitApproval()"><i data-lucide="check"></i> ยืนยันอนุมัติเริ่มซ่อม</button>
             <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
         </div>
     </div>
 </div>
 
+<!-- ── MODAL: COMPLETE REPAIR (แจ้งซ่อมเสร็จ) ── -->
+<div id="complete-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box" style="width:min(580px,95vw);">
+        <h3><i data-lucide="check-circle-2" style="color:#34d399;"></i> บันทึกงานซ่อมเสร็จสิ้น (Ticket <span id="complete-modal-id"></span>)</h3>
+        <div id="complete-ticket-summary" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:0.85rem;">
+            <!-- Loaded dynamically in chat.js -->
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ยอดชำระสุทธิ (บาท) <span class="req">*</span></label>
+                <input type="number" id="complete-cost" class="form-input" step="0.01" min="0" placeholder="0.00" style="font-size:1.1rem;font-weight:700;color:#34d399;">
+            </div>
+            <div class="form-group">
+                <label>ผู้ส่งมอบรถ / ช่างผู้ทำ <span class="req">*</span></label>
+                <input type="text" id="complete-by" class="form-input" placeholder="ช่างสมชาย">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>บันทึกการซ่อมเสร็จสิ้น / ผลการทดสอบ</label>
+            <textarea id="complete-notes" class="form-input" rows="2" placeholder="เช่น ดำเนินการเปลี่ยนอะไหล่และทดลองขับผ่านปกติ"></textarea>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>🛡️ รับประกันงานนี้ (เดือน)</label>
+                <input type="number" id="complete-warranty-months" class="form-input" min="0" max="120" step="1" placeholder="0 = ไม่มีประกัน">
+            </div>
+            <div class="form-group">
+                <label>รับประกันอะไร</label>
+                <input type="text" id="complete-warranty-note" class="form-input" maxlength="300" placeholder="เช่น แบตเตอรี่ 12 เดือน / ค่าแรง 3 เดือน">
+            </div>
+        </div>
+        <div style="margin-top:6px;padding:10px 12px;border:1px solid rgba(52,211,153,0.3);background:rgba(52,211,153,0.07);border-radius:10px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
+                <input type="checkbox" id="complete-collect-now" checked> 💵 ลูกค้าชำระยอดคงเหลือแล้ว
+                <span id="complete-balance-hint" style="font-weight:400;color:var(--text-muted);font-size:0.82rem;"></span>
+            </label>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                <span style="font-size:0.85rem;color:var(--text-secondary);">ชำระโดย</span>
+                <select id="complete-pay-method" class="form-input" style="max-width:160px;">
+                    <option value="เงินสด">💵 เงินสด</option>
+                    <option value="โอน">📱 โอน / พร้อมเพย์</option>
+                    <option value="บัตร">💳 บัตร</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" style="background:#10b981;border-color:#059669;" onclick="submitComplete()"><i data-lucide="check"></i> บันทึกเสร็จสิ้น & คิดเงิน</button>
+            <button class="btn-cancel" onclick="closeCompleteModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: TICKET DETAIL (ข้อมูลงานซ่อมโดยละเอียด) ── -->
+<div id="ticket-detail-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeTicketDetailModal()">
+  <div class="add-modal-box" style="width:min(760px,96vw);max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;margin-bottom:14px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <h3 style="margin:0;font-size:1.25rem;font-weight:700;display:flex;align-items:center;gap:8px;">
+            <i data-lucide="clipboard-list" style="color:#60a5fa;"></i> ข้อมูลงานซ่อม Ticket <span id="td-modal-id" style="color:#93c5fd;">#—</span>
+          </h3>
+          <span id="td-modal-status-badge"></span>
+        </div>
+        <div id="td-modal-date" style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;"></div>
+      </div>
+      <button class="profile-close-btn" onclick="closeTicketDetailModal()"><i data-lucide="x"></i></button>
+    </div>
+
+    <!-- Cards Row: Customer & Vehicle -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px;">
+      <!-- Customer Card -->
+      <div style="padding:12px 14px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#93c5fd;letter-spacing:0.05em;">👤 ข้อมูลลูกค้า</div>
+          <button id="td-btn-view-customer" class="btn-sm" style="padding:2px 8px;font-size:0.72rem;color:#60a5fa;border:1px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.1);border-radius:5px;cursor:pointer;" onclick="openTicketCustomer360()">ดู 360° Profile</button>
+        </div>
+        <div style="font-size:1rem;font-weight:700;color:#fff;" id="td-customer-name">—</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-size:0.82rem;">
+          <span id="td-customer-phone" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);"><i data-lucide="phone" style="width:13px;height:13px;"></i> —</span>
+          <span id="td-customer-line" style="display:inline-flex;align-items:center;gap:4px;color:#4ade80;"><i data-lucide="message-circle" style="width:13px;height:13px;"></i> LINE: —</span>
+        </div>
+      </div>
+
+      <!-- Vehicle Card -->
+      <div style="padding:12px 14px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);border-radius:10px;">
+        <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#c084fc;letter-spacing:0.05em;margin-bottom:8px;">🚗 ข้อมูลรถยนต์</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="td-vehicle-plate" class="pill" style="font-size:0.95rem;font-weight:700;background:rgba(255,255,255,0.08);color:#fff;padding:4px 10px;">—</span>
+          <strong id="td-vehicle-model" style="font-size:0.92rem;color:var(--text-primary);">—</strong>
+        </div>
+        <div style="margin-top:6px;font-size:0.82rem;color:var(--text-muted);" id="td-vehicle-mileage">
+          <i data-lucide="gauge" style="width:13px;height:13px;display:inline-block;vertical-align:-1px;"></i> เลขไมล์: —
+        </div>
+      </div>
+    </div>
+
+    <!-- Mechanic & Symptoms Box -->
+    <div style="padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+        <div>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">ช่างผู้รับผิดชอบงาน</span>
+          <strong id="td-mechanic-name" style="font-size:0.88rem;color:#fcd34d;">—</strong>
+        </div>
+        <div>
+          <span style="font-size:0.75rem;color:var(--text-muted);display:block;">อนุมัติโดย</span>
+          <span id="td-approved-by" style="font-size:0.88rem;color:var(--text-secondary);">—</span>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">อาการที่ลูกค้าแจ้ง / บันทึกรับรถ</span>
+        <div id="td-raw-input" style="font-size:0.84rem;color:#e2e8f0;background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;white-space:pre-wrap;line-height:1.45;">—</div>
+      </div>
+
+      <div id="td-notes-container" style="margin-top:8px;display:none;">
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">ความเห็นช่าง / บันทึกผลตรวจ</span>
+        <div id="td-mechanic-notes" style="font-size:0.84rem;color:#cbd5e1;background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;white-space:pre-wrap;line-height:1.45;">—</div>
+      </div>
+
+      <div id="td-diagnosed-container" style="margin-top:8px;display:none;">
+        <span style="font-size:0.75rem;color:var(--text-muted);display:block;margin-bottom:4px;">ระบบตรวจพบปัญหา (AI Diagnosis)</span>
+        <div id="td-diagnosed-issues" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- Line items table -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.8rem;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🔧 รายการซ่อม & อะไหล่</div>
+      <div class="table-responsive" style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+        <table class="data-table" style="margin:0;">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>รายการ</th>
+              <th style="width:80px;text-align:center;">จำนวน</th>
+              <th style="width:110px;text-align:right;">ราคา/หน่วย</th>
+              <th style="width:110px;text-align:right;">รวม (บาท)</th>
+            </tr>
+          </thead>
+          <tbody id="td-line-items-tbody">
+            <!-- line items injected here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pricing Summary -->
+    <div style="padding:12px 16px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <div style="font-size:0.82rem;color:var(--text-secondary);">
+        ค่าแรง: <span id="td-labor-cost" style="color:#fff;font-weight:600;">฿0</span> &nbsp;|&nbsp; ค่าอะไหล่: <span id="td-parts-cost" style="color:#fff;font-weight:600;">฿0</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <span style="font-size:0.85rem;color:var(--text-muted);">ยอดชำระ:</span>
+        <strong id="td-total-cost" style="font-size:1.35rem;color:#34d399;">฿0</strong>
+      </div>
+    </div>
+
+    <!-- Actions Toolbar -->
+    <div class="modal-actions" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+      <span id="td-workflow-btn-container"></span>
+      <button type="button" class="btn-sm" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);color:#34d399;padding:8px 14px;font-size:0.84rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;" onclick="printWorkOrderFromCurrentDetail()"><i data-lucide="printer" style="width:14px;height:14px;"></i> พิมพ์ใบแจ้งงาน</button>
+      <button type="button" class="btn-sm" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;padding:8px 14px;font-size:0.84rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;" onclick="printInvoiceFromCurrentDetail()"><i data-lucide="receipt" style="width:14px;height:14px;"></i> พิมพ์ใบเสร็จ</button>
+      <button type="button" class="btn-sm" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:8px 12px;font-size:0.84rem;display:inline-flex;align-items:center;gap:6px;" onclick="openTrackFromCurrentDetail()"><i data-lucide="external-link" style="width:14px;height:14px;"></i> หน้าติดตาม</button>
+      <button type="button" class="btn-sm" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:8px 12px;font-size:0.84rem;display:inline-flex;align-items:center;gap:6px;" onclick="if(currentDetailTicket)deleteTicket(currentDetailTicket.id)" title="ลบงานซ่อมนี้"><i data-lucide="trash-2" style="width:14px;height:14px;"></i> ลบงานซ่อม</button>
+      <button class="btn-cancel" onclick="closeTicketDetailModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL: ADD APPOINTMENT ── -->
 <div id="appt-modal" class="add-modal-overlay" style="display:none;">
     <div class="add-modal-box">
-        <h3><i data-lucide="calendar-plus"></i> เพิ่มนัดหมายใหม่</h3>
+        <h3><i data-lucide="calendar-plus"></i> <span id="appt-modal-title">เพิ่มนัดหมายใหม่</span></h3>
         <div class="form-row-2">
             <div class="form-group">
                 <label>ชื่อลูกค้า <span class="req">*</span></label>
@@ -567,9 +1866,20 @@
                 <input type="time" id="appt-time" class="form-input" value="09:00">
             </div>
         </div>
-        <div class="form-group">
-            <label>บริการที่ต้องการ</label>
-            <input type="text" id="appt-service" class="form-input" placeholder="เปลี่ยนน้ำมันเครื่อง + ตรวจเช็คช่วงล่าง">
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>บริการที่ต้องการ</label>
+                <input type="text" id="appt-service" class="form-input" placeholder="เปลี่ยนน้ำมันเครื่อง + ตรวจเช็คช่วงล่าง">
+            </div>
+            <div class="form-group">
+                <label>สถานะ</label>
+                <select id="appt-status" class="form-input">
+                    <option value="confirmed">✅ ยืนยัน</option>
+                    <option value="pending">⏳ รอยืนยัน</option>
+                    <option value="completed">🏁 เสร็จสิ้น</option>
+                    <option value="cancelled">❌ ยกเลิก</option>
+                </select>
+            </div>
         </div>
         <div class="modal-actions">
             <button class="btn-primary" onclick="submitAppointment()"><i data-lucide="check"></i> บันทึกนัดหมาย</button>
@@ -585,14 +1895,11 @@
         <div class="form-row-2">
             <div class="form-group">
                 <label>หมวดหมู่ <span class="req">*</span></label>
-                <select id="expense-cat" class="form-input">
-                    <option>ค่าไฟฟ้า</option>
-                    <option>ค่าน้ำประปา</option>
-                    <option>ค่าเช่า</option>
-                    <option>ค่าอินเทอร์เน็ต</option>
-                    <option>ค่าโทรศัพท์</option>
-                    <option>อื่นๆ</option>
-                </select>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" id="expense-cat" class="form-input" placeholder="เลือกหรือพิมพ์หมวดหมู่" list="expense-cat-list" style="flex:1;">
+                    <datalist id="expense-cat-list"></datalist>
+                    <button type="button" onclick="openManageExpenseCats()" title="จัดการหมวดหมู่" style="flex-shrink:0;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i data-lucide="settings-2" style="width:14px;height:14px;"></i> จัดการ</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
@@ -620,10 +1927,107 @@
     </div>
 </div>
 
-<!-- ── MODAL: ADD SUPPLIER ── -->
-<div id="supplier-modal" class="add-modal-overlay" style="display:none;">
+<!-- ── MODAL: EDIT EXPENSE ── -->
+<div id="edit-expense-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeEditExpenseModal()">
+    <div class="add-modal-box" style="max-width:520px;">
+        <h3><i data-lucide="pencil"></i> แก้ไขค่าใช้จ่าย</h3>
+        <input type="hidden" id="edit-expense-id">
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>หมวดหมู่ <span class="req">*</span></label>
+                <input type="text" id="edit-expense-cat" class="form-input" placeholder="เลือกหรือพิมพ์หมวดหมู่" list="expense-cat-list">
+            </div>
+            <div class="form-group">
+                <label>จำนวนเงิน (บาท) <span class="req">*</span></label>
+                <input type="number" id="edit-expense-amount" class="form-input" placeholder="0.00">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>รายละเอียด</label>
+            <input type="text" id="edit-expense-desc" class="form-input" placeholder="ค่าไฟฟ้าเดือนกันยายน 2026">
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>วันที่</label>
+                <input type="date" id="edit-expense-date" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>บันทึกโดย</label>
+                <input type="text" id="edit-expense-by" class="form-input" value="ผู้จัดการ">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="saveEditExpense()"><i data-lucide="save"></i> บันทึกการแก้ไข</button>
+            <button class="btn-cancel" onclick="closeEditExpenseModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: EDIT STOCK ITEM (dashboard table) ── -->
+<div id="edit-stock-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeEditStockModal()">
+    <div class="add-modal-box" style="max-width:600px;">
+        <h3><i data-lucide="package"></i> แก้ไขข้อมูลสินค้า</h3>
+        <input type="hidden" id="edit-stock-id">
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ชื่อสินค้า (ภาษาไทย) <span class="req">*</span></label>
+                <input type="text" id="edit-stock-name-th" class="form-input" placeholder="เช่น น้ำมันเครื่อง 5W-30">
+            </div>
+            <div class="form-group">
+                <label>ชื่อสินค้า (ภาษาอังกฤษ)</label>
+                <input type="text" id="edit-stock-name-en" class="form-input" placeholder="Engine Oil 5W-30">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>SKU / รหัสสินค้า</label>
+                <input type="text" id="edit-stock-sku" class="form-input" placeholder="OIL-5W30-001">
+            </div>
+            <div class="form-group">
+                <label>หมวดหมู่ <span class="req">*</span></label>
+                <input type="text" id="edit-stock-category" class="form-input" placeholder="น้ำมันเครื่อง">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>จำนวนคงเหลือ</label>
+                <input type="number" id="edit-stock-quantity" class="form-input" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label>จุดแจ้งเตียนสินค้าใกล้หมด</label>
+                <input type="number" id="edit-stock-reorder" class="form-input" min="0" value="5">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ราคาทุน (บาท)</label>
+                <input type="number" id="edit-stock-cost" class="form-input" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>ราคาขาย (บาท)</label>
+                <input type="number" id="edit-stock-price" class="form-input" min="0" step="0.01" value="0">
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:6px;">
+            <label>รูปภาพบิล / ใบเสร็จรับเงิน (Purchase Bill / Receipt)</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="file" id="edit-stock-bill-file" class="form-input" accept="image/*" style="flex:1;">
+                <button type="button" id="edit-stock-view-bill-btn" class="btn-sm" style="display:none; white-space:nowrap; background:rgba(167,139,250,0.15); border:1px solid rgba(167,139,250,0.35); color:#c4b5fd; padding:7px 12px; cursor:pointer; align-items:center; gap:6px; border-radius:6px;" onclick="viewStockCurrentBill()"><i data-lucide="receipt" style="width:14px;height:14px;"></i> ดูบิลปัจจุบัน</button>
+            </div>
+            <input type="hidden" id="edit-stock-bill-path" value="">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="saveEditStock()"><i data-lucide="save"></i> บันทึกการแก้ไข</button>
+            <button class="btn-cancel" onclick="closeEditStockModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: ADD / EDIT SUPPLIER ── -->
+<div id="supplier-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeSupplierModal()">
     <div class="add-modal-box">
-        <h3><i data-lucide="building-2"></i> เพิ่มผู้จำหน่ายใหม่</h3>
+        <h3 id="supplier-modal-title"><i data-lucide="building-2"></i> เพิ่มผู้จำหน่ายใหม่</h3>
+        <input type="hidden" id="sup-id" value="">
         <div class="form-group">
             <label>ชื่อร้าน / บริษัท <span class="req">*</span></label>
             <input type="text" id="sup-name" class="form-input" placeholder="ร้านอะไหล่มีสุข">
@@ -646,6 +2050,10 @@
             <label>ที่อยู่</label>
             <textarea id="sup-address" class="form-input" rows="2" placeholder="123 ถ.พระราม 4 กรุงเทพ"></textarea>
         </div>
+        <div class="form-group">
+            <label>หมายเหตุ / เงื่อนไขเครดิต</label>
+            <input type="text" id="sup-notes" class="form-input" placeholder="เช่น เครดิต 30 วัน, ส่งฟรีเมื่อสั่งเกิน 5,000">
+        </div>
         <div class="modal-actions">
             <button class="btn-primary" onclick="submitSupplier()"><i data-lucide="check"></i> บันทึก</button>
             <button class="btn-cancel" onclick="closeSupplierModal()">ยกเลิก</button>
@@ -653,7 +2061,454 @@
     </div>
 </div>
 
-<!-- ── CUSTOMER 360° PROFILE MODAL ── -->
+<!-- ── MODAL: SUPPLIER DETAILS & PURCHASE HISTORY ── -->
+<div id="supplier-detail-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeSupplierDetailModal()">
+  <div class="add-modal-box" style="max-width:680px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="sd-modal-title" style="margin:0;display:flex;align-items:center;gap:8px;"><i data-lucide="building-2"></i> ข้อมูลผู้จำหน่าย</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button type="button" class="btn-sm" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;border-radius:6px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;" onclick="openEditSupplierModal(currentDetailSupplier?.id);closeSupplierDetailModal();"><i data-lucide="pencil" style="width:12px;height:12px;"></i> แก้ไข</button>
+        <button type="button" class="profile-close-btn" onclick="closeSupplierDetailModal()"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+
+    <!-- Contact & Stats Card -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;font-size:0.88rem;">
+        <div>
+          <span style="color:var(--text-muted);font-size:0.78rem;">เบอร์โทรศัพท์:</span>
+          <div id="sd-phone" style="font-weight:600;margin-top:2px;">—</div>
+        </div>
+        <div>
+          <span style="color:var(--text-muted);font-size:0.78rem;">LINE ID:</span>
+          <div id="sd-line" style="font-weight:600;margin-top:2px;">—</div>
+        </div>
+        <div>
+          <span style="color:var(--text-muted);font-size:0.78rem;">อีเมล:</span>
+          <div id="sd-email" style="font-weight:600;margin-top:2px;">—</div>
+        </div>
+        <div>
+          <span style="color:var(--text-muted);font-size:0.78rem;">ที่อยู่:</span>
+          <div id="sd-address" style="font-weight:600;margin-top:2px;">—</div>
+        </div>
+      </div>
+      <div id="sd-notes-container" style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.85rem;">
+        <span style="color:var(--text-muted);font-size:0.78rem;">หมายเหตุ / เงื่อนไขเครดิต:</span>
+        <div id="sd-notes" style="margin-top:2px;color:var(--text-secondary);">—</div>
+      </div>
+    </div>
+
+    <!-- Stats Summary Badges -->
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <div style="flex:1;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:0.75rem;color:#93c5fd;">จำนวนบิลสั่งซื้อ</div>
+        <div id="sd-total-count" style="font-size:1.35rem;font-weight:700;color:#60a5fa;margin-top:2px;">0</div>
+      </div>
+      <div style="flex:1;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:0.75rem;color:#6ee7b7;">ยอดสั่งซื้อรวมทั้งหมด</div>
+        <div id="sd-total-amount" style="font-size:1.35rem;font-weight:700;color:#34d399;margin-top:2px;">฿0</div>
+      </div>
+    </div>
+
+    <!-- Purchases History Table -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h4 style="margin:0;font-size:0.92rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;"><i data-lucide="receipt" style="width:14px;height:14px;"></i> ประวัติใบสั่งซื้อจากเจ้านี้</h4>
+        <button type="button" class="btn-sm" style="background:#10b981;border:none;color:#fff;padding:4px 8px;font-size:0.78rem;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" onclick="openAddPurchaseForCurrentSupplier()"><i data-lucide="plus" style="width:12px;height:12px;"></i> สั่งซื้อเพิ่ม</button>
+      </div>
+      <div class="table-responsive" style="max-height:220px;overflow-y:auto;border:1px solid rgba(255,255,255,0.08);border-radius:6px;">
+        <table class="data-table" style="font-size:0.82rem;">
+          <thead>
+            <tr><th>เลขที่บิล</th><th>วันที่</th><th>รายการสินค้า</th><th>ยอดเงิน</th></tr>
+          </thead>
+          <tbody id="sd-purchases-tbody">
+            <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">ไม่มีประวัติการสั่งซื้อ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal Actions -->
+    <div class="modal-actions" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:16px;">
+      <button type="button" class="btn-sm" style="color:#f87171;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);padding:6px 12px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" onclick="deleteCurrentDetailSupplier()"><i data-lucide="trash-2" style="width:13px;height:13px;"></i> ลบผู้จำหน่ายนี้</button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-sm" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;padding:6px 12px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" onclick="editCurrentDetailSupplier()"><i data-lucide="edit-3" style="width:13px;height:13px;"></i> แก้ไข</button>
+        <button type="button" class="btn-cancel" onclick="closeSupplierDetailModal()">ปิด</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: POS SALE (คนซื้ออะไหล่อย่างเดียว ไม่ได้ทำงานซ่อม) ── -->
+<div id="pos-sale-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closePOSModal()">
+    <div class="add-modal-box" style="width:min(760px,96vw);max-height:92vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div>
+                <h3 style="margin:0;display:flex;align-items:center;gap:8px;color:#10b981;">
+                    <i data-lucide="shopping-cart"></i> <span id="pos-modal-title">บันทึกคนซื้ออะไหล่หน้าร้าน (POS)</span>
+                </h3>
+                <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;">
+                    สำหรับลูกค้าที่มาซื้ออะไหล่อย่างเดียว ไม่ได้เปิดงานซ่อมรถ
+                </div>
+            </div>
+            <button type="button" onclick="closePOSModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.3rem;line-height:1;">✕</button>
+        </div>
+
+        <!-- ── ข้อมูลผู้ซื้อและการชำระเงิน ── -->
+        <div style="padding:14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:12px;margin-bottom:16px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6ee7b7;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <i data-lucide="user" style="width:14px;height:14px;"></i> ข้อมูลลูกค้า & การชำระเงิน
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>ชื่อลูกค้า / ผู้ซื้อ <span class="req">*</span></label>
+                    <input type="text" id="pos-cust-name" class="form-input" list="pos-cust-list" placeholder="เช่น ลูกค้าทั่วไป (Walk-in) หรือระบุชื่อลูกค้า" value="ลูกค้าทั่วไป (Walk-in)">
+                    <datalist id="pos-cust-list"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>เบอร์โทรศัพท์ (ถ้ามี)</label>
+                    <input type="text" id="pos-cust-phone" class="form-input" placeholder="08XXXXXXXX">
+                </div>
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>วันที่ขาย <span class="req">*</span></label>
+                    <input type="date" id="pos-sale-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>วิธีชำระเงิน</label>
+                    <select id="pos-payment-method" class="form-input">
+                        <option value="เงินสด">💵 เงินสด (Cash)</option>
+                        <option value="โอนเงิน (QR)">📱 โอนเงิน / สแกน QR</option>
+                        <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── รายการอะไหล่ที่ลูกค้าซื้อ ── -->
+        <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#38bdf8;display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="package" style="width:14px;height:14px;"></i> อะไหล่ที่ลูกค้าซื้อ (ตัดสต็อกอัตโนมัติ)
+                </div>
+                <button type="button" onclick="addPOSItemRow()" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;">
+                    <i data-lucide="plus" style="width:13px;height:13px;"></i> เพิ่มรายการ
+                </button>
+            </div>
+            <datalist id="pos-stock-datalist"></datalist>
+
+            <div id="pos-items-container" style="display:flex;flex-direction:column;gap:8px;">
+                <!-- Rows injected here -->
+            </div>
+
+            <!-- Total card -->
+            <div style="margin-top:12px;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div style="font-size:0.84rem;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="check-circle" style="width:15px;height:15px;color:#10b981;"></i>
+                    <span>ระบบจะตัดสต็อกและบันทึกรายรับขายอะไหล่อัตโนมัติ</span>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:0.85rem;color:var(--text-muted);margin-right:8px;">ยอดรวมที่ต้องชำระ:</span>
+                    <strong id="pos-grand-total" style="font-size:1.25rem;color:#34d399;">฿0.00</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── หมายเหตุ ── -->
+        <div class="form-group" style="margin-bottom:18px;">
+            <label>หมายเหตุ / รายละเอียดเพิ่มเติม</label>
+            <input type="text" id="pos-notes" class="form-input" placeholder="เช่น ลูกค้าประจำ / ซื้อไปเปลี่ยนเอง / ส่งพัสดุ">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-primary" style="background:#10b981;border-color:#10b981;" onclick="submitPOSSale()"><i data-lucide="check"></i> ยืนยันการขาย (ตัดสต็อก & บันทึกเงิน)</button>
+            <button class="btn-cancel" onclick="closePOSModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: ADD PURCHASE BILL (MANUAL) ── -->
+<div id="purchase-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closePurchaseModal()">
+    <div class="add-modal-box" style="width:min(760px,96vw);max-height:92vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h3 style="margin:0;display:flex;align-items:center;gap:8px;">
+                <i data-lucide="receipt" style="color:#60a5fa;"></i> บันทึกประวัติการซื้ออะไหล่ (Manual)
+            </h3>
+            <button type="button" onclick="closePurchaseModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+        </div>
+
+        <!-- ── ข้อมูลผู้จำหน่ายและบิล ── -->
+        <div style="padding:14px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:12px;margin-bottom:16px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#a5b4fc;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <i data-lucide="building-2" style="width:14px;height:14px;"></i> ข้อมูลบิลและร้านค้าผู้จำหน่าย
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>ร้านค้า / ผู้จำหน่าย</label>
+                    <input type="text" id="pb-supplier" class="form-input" list="pb-supplier-list" placeholder="เลือกหรือพิมพ์ชื่อร้านค้า เช่น บจก. เจริญยนต์">
+                    <datalist id="pb-supplier-list"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>เลขที่บิล / ใบกำกับภาษี</label>
+                    <input type="text" id="pb-number" class="form-input" placeholder="เช่น INV-2026-001 (เว้นว่างเพื่อสร้างอัตโนมัติ)">
+                </div>
+            </div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>วันที่ตามบิล <span class="req">*</span></label>
+                    <input type="date" id="pb-date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>รูปถ่ายบิล / ใบเสร็จ (ถ้ามี)</label>
+                    <input type="file" id="pb-file" class="form-input" accept="image/*" style="padding:5px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- ── รายการอะไหล่ / สินค้า ── -->
+        <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#34d399;display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="package" style="width:14px;height:14px;"></i> รายการอะไหล่ที่จัดซื้อ
+                </div>
+                <button type="button" onclick="addPurchaseItemRow()" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);color:#34d399;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;">
+                    <i data-lucide="plus" style="width:13px;height:13px;"></i> เพิ่มรายการ
+                </button>
+            </div>
+            <datalist id="pb-stock-item-list"></datalist>
+            
+            <div id="pb-items-container" style="display:flex;flex-direction:column;gap:8px;">
+                <!-- Line item rows injected here -->
+            </div>
+
+            <!-- Grand total card & stock toggle -->
+            <div style="margin-top:12px;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.86rem;color:#cbd5e1;margin:0;">
+                    <input type="checkbox" id="pb-update-stock" checked style="width:16px;height:16px;accent-color:#3b82f6;">
+                    <span>📥 นำเข้าและเพิ่มจำนวนในสต็อกสินค้าอัตโนมัติ (Update Stock)</span>
+                </label>
+                <div style="text-align:right;">
+                    <span style="font-size:0.85rem;color:var(--text-muted);margin-right:8px;">ยอดรวมทั้งสิ้น:</span>
+                    <strong id="pb-grand-total" style="font-size:1.18rem;color:#34d399;">฿0.00</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── หมายเหตุ ── -->
+        <div class="form-group" style="margin-bottom:18px;">
+            <label>หมายเหตุเพิ่มเติม</label>
+            <textarea id="pb-notes" class="form-input" rows="2" placeholder="เช่น ชำระเงินสด / โอนเงิน / อะไหล่สำรองรอเบิก"></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitPurchase()"><i data-lucide="check"></i> บันทึกประวัติการซื้อ</button>
+            <button class="btn-cancel" onclick="closePurchaseModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: EDIT PURCHASE BILL ── -->
+<div id="edit-purchase-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeEditPurchaseModal()">
+    <div class="add-modal-box" style="width:min(680px,96vw);max-height:92vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h3 style="margin:0;display:flex;align-items:center;gap:8px;">
+                <i data-lucide="pencil" style="color:#60a5fa;"></i> แก้ไขประวัติการจัดซื้ออะไหล่
+            </h3>
+            <button type="button" onclick="closeEditPurchaseModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+        </div>
+        <input type="hidden" id="edit-pb-id">
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>เลขที่บิล <span class="req">*</span></label>
+                <input type="text" id="edit-pb-number" class="form-input" placeholder="เลขที่บิล">
+            </div>
+            <div class="form-group">
+                <label>วันที่ตามบิล <span class="req">*</span></label>
+                <input type="date" id="edit-pb-date" class="form-input">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ร้านค้า / ผู้จำหน่าย</label>
+                <input type="text" id="edit-pb-supplier" class="form-input" list="pb-supplier-list" placeholder="ชื่อร้านค้าผู้จำหน่าย">
+            </div>
+            <div class="form-group">
+                <label>ยอดรวมทั้งสิ้น (บาท) <span class="req">*</span></label>
+                <input type="number" step="0.01" id="edit-pb-amount" class="form-input" placeholder="0.00">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>รายการสินค้า / อะไหล่ (สรุปรายการ)</label>
+            <input type="text" id="edit-pb-items-summary" class="form-input" placeholder="เช่น กรองน้ำมันเครื่อง (10), ผ้าเบรก (5)">
+            <small style="color:var(--text-muted);font-size:0.75rem;">ระบุชื่อสินค้าพร้อมจำนวน เช่น ชื่อ (จำนวน)</small>
+        </div>
+        <div class="form-group">
+            <label>รูปภาพบิล / ใบเสร็จ</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="file" id="edit-pb-file" class="form-input" accept="image/*" style="flex:1;">
+                <button type="button" id="edit-pb-view-bill-btn" class="btn-sm" style="display:none; white-space:nowrap; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.35); color:#60a5fa; padding:7px 12px; cursor:pointer; align-items:center; gap:6px; border-radius:6px;" onclick="viewEditPurchaseCurrentBill()"><i data-lucide="receipt" style="width:14px;height:14px;"></i> ดูบิลปัจจุบัน</button>
+            </div>
+            <input type="hidden" id="edit-pb-image-path" value="">
+        </div>
+        <div class="form-group" style="margin-bottom:18px;">
+            <label>หมายเหตุเพิ่มเติม</label>
+            <textarea id="edit-pb-notes" class="form-input" rows="2" placeholder="หมายเหตุ"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="saveEditPurchase()"><i data-lucide="save"></i> บันทึกการแก้ไข</button>
+            <button class="btn-cancel" onclick="closeEditPurchaseModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: ADD STOCK ITEM ── -->
+<div id="stock-modal" class="add-modal-overlay" style="display:none;">
+    <div class="add-modal-box" style="width:min(600px,96vw);">
+        <h3><i data-lucide="package"></i> เพิ่มอะไหล่ใหม่ในคลัง</h3>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ชื่อภาษาไทย <span class="req">*</span></label>
+                <input type="text" id="stock-name-th" class="form-input" placeholder="น้ำมันเครื่อง 5W-30">
+            </div>
+            <div class="form-group">
+                <label>ชื่อภาษาอังกฤษ</label>
+                <input type="text" id="stock-name-en" class="form-input" placeholder="Engine Oil 5W-30">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>รหัสสินค้า (SKU) <span class="req">*</span></label>
+                <input type="text" id="stock-sku" class="form-input" placeholder="OIL-5W30">
+            </div>
+            <div class="form-group">
+                <label>หมวดหมู่</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" id="stock-category" class="form-input" placeholder="เลือกหรือพิมพ์หมวดหมู่" list="stock-cat-list" style="flex:1;">
+                    <datalist id="stock-cat-list"></datalist>
+                    <button type="button" onclick="openManageStockCats()" title="จัดการหมวดหมู่" style="flex-shrink:0;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i data-lucide="settings-2" style="width:14px;height:14px;"></i> จัดการ</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>ราคาต้นทุน (บาท) <span class="req">*</span></label>
+                <input type="number" id="stock-cost" class="form-input" placeholder="200" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>ราคาขาย (บาท) <span class="req">*</span></label>
+                <input type="number" id="stock-price" class="form-input" placeholder="350" min="0" step="0.01">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>จำนวนเริ่มต้น <span class="req">*</span></label>
+                <input type="number" id="stock-qty" class="form-input" placeholder="10" min="0">
+            </div>
+            <div class="form-group">
+                <label>ระดับสั่งซื้อ (Reorder Level)</label>
+                <input type="number" id="stock-reorder" class="form-input" placeholder="5" min="0">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="submitAddStock()"><i data-lucide="check"></i> บันทึกอะไหล่</button>
+            <button class="btn-cancel" onclick="closeStockModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+<!-- ── MODAL: REAL-TIME STOCK ROOM BARCODE SCANNER ── -->
+<div id="stock-scanner-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this) closeStockScanner()">
+  <div class="add-modal-box" style="width:min(520px,96vw); max-height:88vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.6); border:1px solid rgba(99,179,237,0.35);">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(99,179,237,0.12),rgba(59,130,246,0.04));">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,179,237,0.15);display:flex;align-items:center;justify-content:center;color:#63b3ed;border:1px solid rgba(99,179,237,0.3);">
+          <i data-lucide="scan-barcode" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <div style="font-size:1.02rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+            <span>เครื่องสแกนบาร์โค้ดห้องสต๊อก</span>
+            <span id="scan-badge-mode" style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.18);color:#4ade80;border:1px solid rgba(34,197,94,0.35);padding:2px 7px;border-radius:12px;letter-spacing:0.04em;">ยิง +1 ทันที</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">ยิง 1 ครั้ง = ปรับจำนวน 1 ทันที โดยไม่ต้องกดเมาส์</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="btn-toggle-sound" onclick="toggleScannerSound()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text-secondary);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;" title="เปิด/ปิดเสียงบี๊บ">
+          <i data-lucide="volume-2" id="icon-sound" style="width:15px;height:15px;color:#4ade80;"></i>
+          <span id="label-sound" style="font-size:11px;">เสียงเปิด</span>
+        </button>
+        <button onclick="closeStockScanner()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;" title="ปิดหน้าต่าง">
+          <i data-lucide="x" style="width:20px;height:20px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mode Selector Pills -->
+    <div style="padding:10px 20px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--border);display:flex;gap:8px;">
+      <button id="btn-mode-add" onclick="setScannerMode('add')" style="flex:1;padding:8px 8px;border-radius:8px;border:1px solid #22c55e;background:rgba(34,197,94,0.18);color:#86efac;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.2s;">
+        <i data-lucide="plus-circle" style="width:15px;height:15px;"></i>
+        <span>ยิงรับเข้า (+1)</span>
+      </button>
+      <button id="btn-mode-deduct" onclick="setScannerMode('deduct')" style="flex:1;padding:8px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.2s;">
+        <i data-lucide="minus-circle" style="width:15px;height:15px;"></i>
+        <span>ยิงตัดออก (-1)</span>
+      </button>
+      <button id="btn-mode-lookup" onclick="setScannerMode('lookup')" style="flex:1;padding:8px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.2s;">
+        <i data-lucide="search" style="width:15px;height:15px;"></i>
+        <span>ดูข้อมูลอย่างเดียว</span>
+      </button>
+    </div>
+
+    <!-- Scrollable content -->
+    <div style="flex:1;overflow-y:auto;padding:16px 20px 20px;">
+
+      <!-- Scanner Input Box -->
+      <div style="position:relative;margin-bottom:10px;">
+        <i data-lucide="barcode" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:#63b3ed;pointer-events:none;"></i>
+        <input type="text" id="stock-barcode-input"
+          style="width:100%;padding:13px 44px 13px 44px;background:var(--bg-app);border:2px solid rgba(99,179,237,0.5);border-radius:10px;color:var(--text-primary);font-size:16px;font-family:monospace;letter-spacing:0.06em;font-weight:600;outline:none;box-shadow:0 0 14px rgba(99,179,237,0.12);"
+          placeholder="🎯 พร้อมยิงบาร์โค้ด... (Ready)"
+          autocomplete="off" spellcheck="false"
+          oninput="onStockBarcodeInput()"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();doStockBarcodeScanAction();}">
+        <button onclick="doStockBarcodeScanAction()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:7px 12px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;">
+          <i data-lucide="corner-down-left" style="width:13px;height:13px;"></i> ยิง
+        </button>
+      </div>
+
+      <!-- Quick status indicator -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:6px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;"></span>
+          <span id="scan-mode-hint-text">ยิงบาร์โค้ด 1 ครั้ง = เพิ่มสต๊อก +1 ทันทีอัตโนมัติ</span>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-secondary);">
+          รอบนี้: <span id="session-scan-count" style="color:#4ade80;font-size:13px;">0</span> ชิ้น
+          <button onclick="resetScanSession()" style="margin-left:6px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:10px;text-decoration:underline;">รีเซ็ต</button>
+        </div>
+      </div>
+
+      <!-- Result Card Area (Dynamic) -->
+      <div id="stock-scanner-result"></div>
+
+      <!-- Recent Scans in this Session -->
+      <div id="stock-scan-session-history-container" style="margin-top:16px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-top:12px;border-top:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);display:flex;align-items:center;gap:5px;">
+            <i data-lucide="history" style="width:13px;height:13px;"></i> ประวัติการยิงในรอบนี้
+          </span>
+          <span id="session-items-total" style="font-size:11px;color:var(--text-muted);"></span>
+        </div>
+        <div id="stock-scan-session-list" style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
 <div id="profile-modal" class="profile-modal-overlay" style="display:none;">
     <div class="profile-modal">
         <div class="profile-modal-header">
@@ -661,12 +2516,18 @@
                 <h2 id="profile-modal-name" style="font-size:1.2rem; font-weight:700;"></h2>
                 <div id="profile-modal-sub" style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;"></div>
             </div>
-            <button class="profile-close-btn" onclick="closeProfileModal()"><i data-lucide="x"></i></button>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button id="profile-edit-btn" class="btn-secondary" style="padding:6px 12px;font-size:0.82rem;" onclick="editCurrentProfileCustomer()"><i data-lucide="edit-3"></i> แก้ไขข้อมูลลูกค้า</button>
+                <button class="profile-close-btn" onclick="closeProfileModal()"><i data-lucide="x"></i></button>
+            </div>
         </div>
         <div class="profile-modal-body">
             <div class="profile-stats-grid" id="profile-stats"></div>
             <div style="margin-bottom:12px;">
-                <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:8px;">🚗 รถของลูกค้า</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">🚗 รถของลูกค้า</div>
+                    <button class="btn-sm" style="padding:4px 10px;font-size:0.75rem;color:#38bdf8;border:1px solid rgba(56,189,248,0.3);background:rgba(56,189,248,0.1);border-radius:6px;cursor:pointer;" onclick="addVehicleToCurrentProfileCustomer()"><i data-lucide="plus" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;"></i> เพิ่มรถยนต์</button>
+                </div>
                 <div class="profile-car-chips" id="profile-cars"></div>
             </div>
             <div>
@@ -680,6 +2541,118 @@
     </div>
 </div>
 
+<!-- ── MODAL: ADD / EDIT CUSTOMER ── -->
+<div id="customer-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeCustomerModal()">
+  <div class="add-modal-box" style="width:min(540px,96vw);max-height:90vh;overflow-y:auto;">
+    <h3 id="customer-modal-title" style="display:flex;align-items:center;gap:10px;"><i data-lucide="user-plus"></i> เพิ่มลูกค้าใหม่</h3>
+    <input type="hidden" id="cust-modal-id" value="">
+    
+    <div class="form-grid-2" style="margin-top:14px;">
+      <div class="form-group">
+        <label>ชื่อ-นามสกุลลูกค้า <span class="req">*</span></label>
+        <input type="text" id="cust-modal-name" class="form-input" placeholder="เช่น คุณสมหมาย ใจดี">
+      </div>
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์ <span class="req">*</span></label>
+        <input type="text" id="cust-modal-phone" class="form-input" placeholder="เช่น 0891234567">
+      </div>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:6px;"><i data-lucide="message-circle" style="width:15px;height:15px;color:#22c55e;"></i> LINE ID</label>
+        <input type="text" id="cust-modal-line" class="form-input" placeholder="เช่น sommai_j หรือ @sommai">
+        <span style="font-size:0.74rem;color:var(--text-muted);margin-top:3px;display:block;">ใช้สำหรับส่งแจ้งเตือนสถานะซ่อมและใบเสร็จ</span>
+      </div>
+      <div class="form-group">
+        <label>อีเมล (ถ้ามี)</label>
+        <input type="email" id="cust-modal-email" class="form-input" placeholder="example@email.com">
+      </div>
+    </div>
+
+    <!-- Optional initial car section (shown when adding new customer) -->
+    <div id="cust-modal-car-section" style="margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:rgba(255,255,255,0.02);">
+      <div style="font-size:0.8rem;font-weight:700;color:#93c5fd;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <i data-lucide="car" style="width:14px;height:14px;"></i> ข้อมูลรถยนต์เบื้องต้น (ถ้ามี)
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>ทะเบียนรถ</label>
+          <input type="text" id="cust-modal-plate" class="form-input" placeholder="เช่น 1กข 1234 กทม.">
+        </div>
+        <div class="form-group">
+          <label>ยี่ห้อรถ</label>
+          <input type="text" id="cust-modal-brand" class="form-input" placeholder="เช่น Toyota, Honda">
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>รุ่นรถ</label>
+          <input type="text" id="cust-modal-model" class="form-input" placeholder="เช่น Camry, Civic">
+        </div>
+        <div class="form-group">
+          <label>เลขไมล์ (กม.)</label>
+          <input type="number" id="cust-modal-mileage" class="form-input" placeholder="เช่น 45000">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn-primary" onclick="submitCustomerModal()"><i data-lucide="save"></i> บันทึกข้อมูล</button>
+      <button class="btn-cancel" onclick="closeCustomerModal()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: ADD VEHICLE TO CUSTOMER ── -->
+<div id="cust-vehicle-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAddVehicleModal()">
+  <div class="add-modal-box" style="width:min(480px,96vw);">
+    <h3 style="display:flex;align-items:center;gap:10px;"><i data-lucide="car"></i> เพิ่มรถยนต์ให้ลูกค้า</h3>
+    <input type="hidden" id="veh-modal-cust-id" value="">
+    <div style="margin:10px 0 14px 0;padding:8px 12px;background:rgba(59,130,246,0.1);border-radius:8px;font-size:0.84rem;color:#93c5fd;">
+      ลูกค้า: <strong id="veh-modal-cust-name-label">-</strong>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>ทะเบียนรถ <span class="req">*</span></label>
+        <input type="text" id="veh-modal-plate" class="form-input" placeholder="เช่น 2ขค 5678 กทม.">
+      </div>
+      <div class="form-group">
+        <label>ยี่ห้อรถ</label>
+        <input type="text" id="veh-modal-brand" class="form-input" placeholder="เช่น Toyota, Honda, Isuzu">
+      </div>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>รุ่นรถ</label>
+        <input type="text" id="veh-modal-model" class="form-input" placeholder="เช่น Yaris, D-Max">
+      </div>
+      <div class="form-group">
+        <label>ปี ค.ศ.</label>
+        <input type="number" id="veh-modal-year" class="form-input" placeholder="2022">
+      </div>
+    </div>
+
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>สีรถ</label>
+        <input type="text" id="veh-modal-color" class="form-input" placeholder="ขาว, ดำ, บรอนซ์เงิน">
+      </div>
+      <div class="form-group">
+        <label>เลขไมล์ปัจจุบัน (กม.)</label>
+        <input type="number" id="veh-modal-mileage" class="form-input" placeholder="30000">
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:18px;">
+      <button class="btn-primary" onclick="submitAddVehicleModal()"><i data-lucide="save"></i> บันทึกรถยนต์</button>
+      <button class="btn-cancel" onclick="closeAddVehicleModal()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── BILL IMAGE VIEWER ── -->
 <div id="bill-img-overlay" class="bill-img-overlay" style="display:none;" onclick="closeBillImg()">
     <img id="bill-img-el" src="" alt="ภาพบิล">
@@ -687,6 +2660,139 @@
 
 <div id="toast-container" class="toast-container"></div>
 
-<script src="/static/chat.js?v=4.0.0"></script>
+<!-- ── MODAL: MANAGE EXPENSE CATEGORIES ── -->
+<div id="manage-expense-cats-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeManageExpenseCats()">
+  <div class="add-modal-box" style="width:min(440px,96vw);">
+    <h3 style="display:flex;align-items:center;gap:10px;"><i data-lucide="tags"></i> จัดการหมวดหมู่ค่าใช้จ่าย</h3>
+    <div id="expense-cats-list" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="new-expense-cat-input" class="form-input" placeholder="ชื่อหมวดหมู่ใหม่" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addExpenseCat();}">
+      <button class="btn-primary" onclick="addExpenseCat()" style="padding:8px 16px;"><i data-lucide="plus"></i> เพิ่ม</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-cancel" onclick="closeManageExpenseCats()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: MANAGE STOCK CATEGORIES ── -->
+<div id="manage-stock-cats-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeManageStockCats()">
+  <div class="add-modal-box" style="width:min(440px,96vw);">
+    <h3 style="display:flex;align-items:center;gap:10px;"><i data-lucide="tag"></i> จัดการหมวดหมู่สต็อก</h3>
+    <div id="stock-cats-list" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="new-stock-cat-input" class="form-input" placeholder="ชื่อหมวดหมู่ใหม่" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addStockCat();}">
+      <button class="btn-primary" onclick="addStockCat()" style="padding:8px 16px;"><i data-lucide="plus"></i> เพิ่ม</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-cancel" onclick="closeManageStockCats()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: PRINT BILL ── -->
+<div id="print-bill-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closePrintBill()">
+  <div class="add-modal-box" style="width:min(580px,96vw);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="display:flex;align-items:center;gap:10px;margin:0;"><i data-lucide="printer"></i> พิมพ์ใบเสร็จ / ใบแจ้งซ่อม</h3>
+      <button onclick="closePrintBill()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:4px;"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+    </div>
+    <div id="print-bill-content" style="background:#fff;color:#111;border-radius:10px;padding:28px 30px;font-family:'Sarabun',Arial,sans-serif;line-height:1.6;"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-primary" onclick="doPrintBill()"><i data-lucide="printer"></i> พิมพ์ / PDF</button>
+      <button class="btn-cancel" onclick="closePrintBill()">ปิด</button>
+    </div>
+  </div>
+</div>
+<!-- ── MODAL: CONFIRM IMPORT / RESTORE ── -->
+<div id="confirm-restore-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeConfirmRestoreModal()">
+  <div class="add-modal-box" style="width:min(520px,96vw);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="display:flex;align-items:center;gap:10px;margin:0;color:#ef4444;"><i data-lucide="alert-triangle"></i> ยืนยันการนำเข้าข้อมูล</h3>
+      <button onclick="closeConfirmRestoreModal()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:4px;"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+    </div>
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:14px;margin-bottom:16px;">
+      <p style="margin:0;font-size:0.88rem;color:#fca5a5;line-height:1.5;">
+        ⚠️ ข้อมูลในระบบจะถูกแทนที่/อัปเดตด้วยข้อมูลจากไฟล์ที่เลือก แต่ไม่ต้องกังวล ระบบจะสร้างจุดสำรองข้อมูลความปลอดภัย (Safety Backup) ให้โดยอัตโนมัติก่อนเริ่มนำเข้า
+      </p>
+    </div>
+    <div id="confirm-restore-details" style="background:rgba(15,23,42,0.5);border-radius:8px;padding:14px;font-size:0.85rem;color:#cbd5e1;margin-bottom:20px;line-height:1.6;">
+      <!-- Populated dynamically -->
+    </div>
+    <div id="import-progress-area" style="display:none;margin-bottom:16px;text-align:center;padding:12px;">
+      <div style="display:inline-block;width:24px;height:24px;border:3px solid rgba(99,102,241,0.3);border-radius:50%;border-top-color:#6366f1;animation:spin 1s ease-in-out infinite;"></div>
+      <div style="margin-top:8px;font-size:0.85rem;color:#a5b4fc;">กำลังนำเข้าข้อมูล กรุณารอสักครู่...</div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button id="btn-confirm-import-proceed" class="btn-primary" style="background:#ef4444;" onclick="doExecuteImport()"><i data-lucide="check"></i> ยืนยันการนำเข้า</button>
+      <button id="btn-confirm-import-cancel" class="btn-cancel" onclick="closeConfirmRestoreModal()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: CONFIRM WIPE ALL DATA (DANGER ZONE) ── -->
+<div id="wipe-confirm-modal" class="add-modal-overlay" style="display:none;" onclick="if(event.target===this)closeWipeConfirmModal()">
+  <div class="add-modal-box" style="width:min(520px,96vw);border:1px solid rgba(239,68,68,0.5);box-shadow:0 10px 40px rgba(239,68,68,0.25);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;color:#ef4444;">
+      <div style="background:rgba(239,68,68,0.15);padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="alert-octagon" style="width:28px;height:28px;"></i>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1.15rem;color:#f87171;">คำเตือนสำคัญ: ล้างข้อมูลทั้งหมด!</h3>
+        <div style="font-size:0.8rem;color:#fca5a5;">Wipe All Data & Factory Reset</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:12px;margin-bottom:14px;font-size:0.85rem;color:#fecaca;line-height:1.5;">
+      ⚠️ <strong>ข้อมูลที่จะถูกลบออกจากระบบทั้งหมด:</strong>
+      <ul style="margin:8px 0 0 18px;padding:0;font-size:0.82rem;line-height:1.6;">
+        <li>ใบสั่งซ่อมและประวัติงานซ่อมทั้งหมด (Tickets & Work Orders)</li>
+        <li>ข้อมูลลูกค้าและข้อมูลรถยนต์ทั้งหมด (Customers & Vehicles)</li>
+        <li>สินค้าในคลังและประวัติการปรับสต็อก (Stock Items & History)</li>
+        <li>บิลรายรับ-รายจ่ายและค่าใช้จ่าย (Bills, Expenses, POS)</li>
+        <li>รายชื่อผู้จำหน่ายและใบสั่งซื้อ (Suppliers & Purchases)</li>
+        <li>ปฏิทินนัดหมายทั้งหมด (Appointments)</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:0.82rem;color:#a7f3d0;display:flex;align-items:center;gap:8px;">
+      <i data-lucide="shield-check" style="width:20px;height:20px;flex-shrink:0;color:#34d399;"></i>
+      <span><strong>ระบบความปลอดภัย:</strong> ระบบจะสำรองข้อมูลปัจจุบัน (Safety Backup) ให้โดยอัตโนมัติก่อนล้าง คุณสามารถกู้คืนได้เสมอหากต้องการ</span>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.84rem;color:#e2e8f0;display:block;margin-bottom:6px;">
+        เพื่อความปลอดภัย กรุณาพิมพ์คำว่า <strong style="color:#ef4444;background:rgba(239,68,68,0.15);padding:2px 6px;border-radius:4px;">DELETE</strong> หรือ <strong style="color:#ef4444;background:rgba(239,68,68,0.15);padding:2px 6px;border-radius:4px;">ล้างข้อมูล</strong> เพื่อยืนยัน:
+      </label>
+      <input type="text" id="wipe-confirm-input" class="form-input" placeholder="พิมพ์ DELETE เพื่อยืนยัน" oninput="checkWipeConfirmationInput()" style="border-color:rgba(239,68,68,0.4);font-weight:600;">
+    </div>
+
+    <div id="wipe-progress-spinner" style="display:none;margin-bottom:16px;text-align:center;padding:10px;">
+      <div style="display:inline-block;width:24px;height:24px;border:3px solid rgba(239,68,68,0.3);border-radius:50%;border-top-color:#ef4444;animation:spin 1s ease-in-out infinite;"></div>
+      <div style="margin-top:6px;font-size:0.84rem;color:#fca5a5;">กำลังสำรองข้อมูลและล้างระบบ กรุณารอสักครู่...</div>
+    </div>
+
+    <div class="modal-actions" style="display:flex;justify-content:flex-end;gap:8px;">
+      <button type="button" class="btn-cancel" onclick="closeWipeConfirmModal()">ยกเลิก</button>
+      <button type="button" id="btn-execute-wipe" class="btn-primary" style="background:#ef4444;border-color:#dc2626;opacity:0.4;cursor:not-allowed;" disabled onclick="executeWipeAllData()">
+        <i data-lucide="trash-2"></i> ยืนยันการล้างข้อมูลทั้งหมด
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: BILL IMAGE VIEWER LIGHTBOX ── -->
+<div id="bill-img-overlay" class="add-modal-overlay" style="display:none; z-index:9999; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; backdrop-filter:blur(4px);" onclick="if(event.target===this)closeBillImg()">
+    <div style="position:relative; max-width:92vw; max-height:92vh; display:flex; flex-direction:column; align-items:center;">
+        <button type="button" onclick="closeBillImg()" style="position:absolute; top:-40px; right:0; background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:1.6rem; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" title="ปิด (Esc)">&times;</button>
+        <img id="bill-img-el" src="" alt="Bill Image" style="max-width:90vw; max-height:86vh; object-fit:contain; border-radius:10px; box-shadow:0 15px 35px rgba(0,0,0,0.8); background:#0f172a; border:1px solid rgba(255,255,255,0.15);">
+    </div>
+</div>
+
+<script src="/static/i18n.js?v=20261008_02"></script>
+<script src="/static/reports.js?v=20261017_features_v1"></script>
+<script src="/static/vendor/jsbarcode-3.11.6.code128.min.js"></script>
+<script src="/static/features.js?v=20261017_features_v2"></script>
+<script src="/static/chat.js?v=20261017_features_v2"></script>
 </body>
 </html>

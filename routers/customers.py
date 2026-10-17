@@ -61,6 +61,15 @@ def update_customer(
     return customer_service.update_customer(db, customer_id, req)
 
 
+@router.delete(
+    "/customers/{customer_id}",
+    summary="Delete customer",
+)
+def delete_customer(customer_id: int, db: Session = Depends(get_db)):
+    return customer_service.delete_customer(db, customer_id)
+
+
+
 # ── 360° Profile ──────────────────────────────────────────────────────────────
 
 @router.get(
@@ -118,5 +127,11 @@ def update_vehicle_mileage(
     summary="Get vehicle health watchlist",
     description="Returns the vehicle record including its full health watchlist (overdue components).",
 )
+@router.get(
+    "/customers/vehicles/{plate}/health",
+    response_model=VehicleResponse,
+    include_in_schema=False,
+)
 def get_vehicle_health(plate: str, db: Session = Depends(get_db)):
     return customer_service.get_vehicle_health(db, plate)
+

@@ -18,7 +18,7 @@ from __future__ import annotations
 import random
 import string
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -121,7 +121,7 @@ def _scan_maintenance_node(state: MarketingState) -> MarketingState:
 def _generate_messages_node(state: MarketingState) -> MarketingState:
     flagged = state["flagged_vehicles"]
     tasks: List[Dict] = []
-    expiry = (datetime.utcnow() + timedelta(days=30)).strftime("%d/%m/%Y")
+    expiry = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%d/%m/%Y")
 
     for v in flagged:
         trigger_type = v.get("trigger_type", "churn_risk")
@@ -179,19 +179,58 @@ def build_marketing_graph():
 marketing_graph = build_marketing_graph()
 
 
-# ── Mock LINE Messaging API dispatch ──────────────────────────────────────────
+# ── Real / Simulated LINE Messaging API dispatch ──────────────────────────────
 
 def mock_line_dispatch(line_id: str, message: str) -> Dict:
     """
-    Simulates a successful LINE OA push message.
-    In production: POST to https://api.line.me/v2/bot/message/push
-    with Authorization: Bearer {LINE_OA_CHANNEL_TOKEN}.
+    Sends real LINE OA push message if LINE_OA_CHANNEL_TOKEN is set,
+    otherwise simulates a successful push.
     """
+    from services import ai_service
+    token = ai_service.get_configured_key("LINE_OA_CHANNEL_TOKEN") or settings.LINE_OA_CHANNEL_TOKEN
+
+    if token and token != "MOCK_LINE_TOKEN":
+        try:
+            import httpx
+            url = "https://api.line.me/v2/bot/message/push"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "to": line_id,
+                "messages": [{"type": "text", "text": message}],
+            }
+            with httpx.Client(timeout=10.0) as client:
+                res = client.post(url, headers=headers, json=payload)
+                if res.status_code == 200:
+                    return {
+                        "success": True,
+                        "message_id": f"LINE-{uuid.uuid4().hex[:12]}",
+                        "recipient": line_id,
+                        "mock": False,
+                        "note": "Sent via live LINE Messaging API",
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"LINE API HTTP {res.status_code}: {res.text[:100]}",
+                        "recipient": line_id,
+                        "mock": False,
+                    }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "recipient": line_id,
+                "mock": False,
+            }
+
     fake_message_id = str(uuid.uuid4()).replace("-", "")[:20]
     return {
         "success": True,
         "message_id": fake_message_id,
         "recipient": line_id,
         "mock": True,
-        "note": "Replace with real LINE Messaging API in production.",
+        "note": "Simulated dispatch (Set LINE_OA_CHANNEL_TOKEN in Settings to enable live push)",
     }

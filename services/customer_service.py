@@ -3,7 +3,7 @@ Customer Service — Module 3 business logic (360° Data Hub)
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -98,15 +98,20 @@ def _ticket_to_response_mini(ticket: ServiceTicket) -> TicketResponse:
 
 
 def _classify_segment(total_spent: float, total_visits: int, last_visit: Optional[datetime]) -> str:
-    now = datetime.utcnow()
-    if last_visit and (now - last_visit).days > 180:
-        return "Churned"
+    now = datetime.now(timezone.utc)
+    if last_visit:
+        # SQLite stores naive datetimes; normalise so subtraction always works.
+        lv = last_visit.replace(tzinfo=timezone.utc) if last_visit.tzinfo is None else last_visit
+        if (now - lv).days > 180:
+            return "Churned"
     if total_visits == 0:
         return "New"
     if total_spent >= 20000 or total_visits >= 5:
         return "VIP"
-    if last_visit and (now - last_visit).days > 90:
-        return "At Risk"
+    if last_visit:
+        lv = last_visit.replace(tzinfo=timezone.utc) if last_visit.tzinfo is None else last_visit
+        if (now - lv).days > 90:
+            return "At Risk"
     return "Regular"
 
 
@@ -117,18 +122,63 @@ def create_customer(db: Session, req: CustomerCreate) -> CustomerResponse:
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Customer with phone {req.phone} already exists (ID: {existing.id}).",
+            detail=f"เบอร์โทร {req.phone} มีอยู่ในระบบแล้ว (ลูกค้า: {existing.name} ID: #{existing.id})",
         )
     customer = Customer(
         name=req.name,
         phone=req.phone,
-        line_id=req.line_id,
-        email=req.email,
+        line_id=req.line_id.strip() if req.line_id else None,
+        email=req.email.strip() if req.email else None,
     )
     db.add(customer)
     db.commit()
     db.refresh(customer)
+
+    # If initial plate was supplied, register the vehicle automatically
+    plate = getattr(req, 'plate', None)
+    if plate and plate.strip():
+        plate_clean = plate.strip()
+        v_exists = db.query(Vehicle).filter(Vehicle.plate == plate_clean).first()
+        if not v_exists:
+            brand = getattr(req, 'brand', None) or "Toyota"
+            model = getattr(req, 'model', None) or getattr(req, 'car_model', None) or "รถยนต์"
+            v = Vehicle(
+                plate=plate_clean,
+                brand=brand,
+                model=model,
+                year=getattr(req, 'year', None) or 2020,
+                current_mileage=getattr(req, 'mileage', None) or 0,
+                customer_id=customer.id,
+            )
+            db.add(v)
+            db.commit()
+        else:
+            # If vehicle already existed, link to this customer
+            v_exists.customer_id = customer.id
+            db.commit()
+
     return _customer_to_response(customer)
+
+
+def delete_customer(db: Session, customer_id: int) -> dict:
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail=f"ไม่พบข้อมูลลูกค้า #{customer_id}")
+
+    # Unlink tickets so service history is preserved
+    for t in db.query(ServiceTicket).filter(ServiceTicket.customer_id == customer_id).all():
+        t.customer_id = None
+
+    # Delete vehicles owned by this customer
+    for v in db.query(Vehicle).filter(Vehicle.customer_id == customer_id).all():
+        # Unlink tickets pointing to this vehicle
+        for vt in db.query(ServiceTicket).filter(ServiceTicket.vehicle_id == v.id).all():
+            vt.vehicle_id = None
+        db.delete(v)
+
+    db.delete(customer)
+    db.commit()
+    return {"status": "ok", "message": f"ลบข้อมูลลูกค้า #{customer_id} เรียบร้อยแล้ว"}
 
 
 def get_customer(db: Session, customer_id: int) -> CustomerResponse:
@@ -161,7 +211,7 @@ def update_customer(db: Session, customer_id: int, req: CustomerUpdate) -> Custo
     if req.email is not None:
         customer.email = req.email
 
-    customer.updated_at = datetime.utcnow()
+    customer.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(customer)
     return _customer_to_response(customer)
@@ -274,8 +324,8 @@ def update_vehicle_mileage(db: Session, plate: str, req: VehicleMileageUpdate) -
         vehicle.last_tire_change_mileage = req.last_tire_change_mileage
 
     # Clear respective overdue alerts if they exist
-    from datetime import datetime
-    now_dt = datetime.utcnow()
+    from datetime import datetime, timezone
+    now_dt = datetime.now(timezone.utc)
     if req.last_oil_change_date or req.last_oil_change_mileage is not None:
         for w in vehicle.health_watchlist:
             if w.component == "น้ำมันเครื่อง":

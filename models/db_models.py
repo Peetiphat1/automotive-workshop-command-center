@@ -3,7 +3,7 @@ SQLAlchemy ORM models for the Automotive Workshop Command Center.
 All JSON fields are stored as TEXT and serialised/deserialised in the service layer.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey,
@@ -12,6 +12,20 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from core.database import Base
+
+BANGKOK_TZ = timezone(timedelta(hours=7))
+
+def get_local_now() -> datetime:
+    """Return local naive datetime in workshop timezone (Asia/Bangkok, UTC+7)."""
+    return datetime.now(BANGKOK_TZ).replace(tzinfo=None)
+
+
+def to_local_naive(dt: datetime) -> datetime:
+    """Convert a timezone-aware datetime (e.g. UTC from the browser) to Bangkok local naive time.
+    Naive datetimes are assumed to already be local and are returned unchanged."""
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(BANGKOK_TZ).replace(tzinfo=None)
 
 
 # ─── Status string constants (used across services/routers) ──────────────────
@@ -49,8 +63,8 @@ class Customer(Base):
     phone = Column(String(20), unique=True, nullable=False, index=True)
     line_id = Column(String(100), nullable=True)
     email = Column(String(200), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
 
     vehicles = relationship("Vehicle", back_populates="customer", lazy="select")
     marketing_tasks = relationship("MarketingTask", back_populates="customer", lazy="select")
@@ -100,7 +114,7 @@ class VehicleHealthWatchlist(Base):
     next_due_date = Column(DateTime, nullable=True)
     is_overdue = Column(Boolean, default=False)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
 
     vehicle = relationship("Vehicle", back_populates="health_watchlist")
 
@@ -130,9 +144,10 @@ class StockItem(Base):
     sell_price = Column(Float, default=0.0)              # What customer pays
     reorder_level = Column(Integer, default=5)           # Alert when below this
     image_filename = Column(String(255), nullable=True)  # File in static/images/parts/
+    bill_path = Column(String(500), nullable=True)       # Purchase bill image in static/uploads/bills/
     notes = Column(Text, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_local_now)
 
 
 class WorkOrder(Base):
@@ -144,7 +159,7 @@ class WorkOrder(Base):
     customer_name = Column(String(200), nullable=True)
     customer_phone = Column(String(20), nullable=True)
     mechanic_name = Column(String(200), nullable=False)
-    work_date = Column(DateTime, default=datetime.utcnow)
+    work_date = Column(DateTime, default=get_local_now)
     description = Column(Text, nullable=True)            # Free text of what was done
     line_items = Column(Text, nullable=True)             # JSON: [{name, qty, unit_price, total, stock_item_id}]
     labor_cost = Column(Float, default=0.0)
@@ -152,7 +167,7 @@ class WorkOrder(Base):
     total_cost = Column(Float, default=0.0)
     mileage = Column(Integer, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
     vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=True)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
 
@@ -182,12 +197,25 @@ class ServiceTicket(Base):
     approved_by = Column(String(200), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     final_cost = Column(Float, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Customer approval of the quote through a LINE link
+    approval_token = Column(String(64), nullable=True, unique=True, index=True)
+    customer_decision = Column(String(20), nullable=True)   # 'approved' | 'declined'
+    customer_decision_at = Column(DateTime, nullable=True)
+    customer_decision_note = Column(Text, nullable=True)
+
+    # Warranty given on this job (counted from completed_at)
+    warranty_months = Column(Integer, nullable=True)
+    warranty_note = Column(String(300), nullable=True)
+
+    created_at = Column(DateTime, default=get_local_now)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
 
     vehicle = relationship("Vehicle", back_populates="tickets")
     customer = relationship("Customer")
+    payments = relationship("Payment", back_populates="ticket", lazy="select")
+    photos = relationship("TicketPhoto", back_populates="ticket", lazy="select", cascade="all, delete-orphan")
 
     # ── JSON helpers ──────────────────────────────────────────────────────────
     def get_symptoms(self) -> list:
@@ -223,7 +251,7 @@ class FinanceBill(Base):
     confirmed_by = Column(String(200), nullable=True)
     confirmed_at = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
 
     ledger_entries = relationship("LedgerEntry", back_populates="bill", lazy="select")
 
@@ -240,8 +268,8 @@ class LedgerEntry(Base):
     category = Column(String(100), nullable=False)
     amount = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
-    entry_date = Column(DateTime, default=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    entry_date = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_local_now)
 
     bill = relationship("FinanceBill", back_populates="ledger_entries")
 
@@ -267,7 +295,7 @@ class MarketingTask(Base):
     dispatched_at = Column(DateTime, nullable=True)
     line_message_id = Column(String(100), nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
 
     customer = relationship("Customer", back_populates="marketing_tasks")
     vehicle = relationship("Vehicle", back_populates="marketing_tasks")
@@ -285,8 +313,8 @@ class Supplier(Base):
     line_id = Column(String(100), nullable=True)
     address = Column(Text, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
 
     purchase_bills = relationship("PurchaseBill", back_populates="supplier", lazy="select")
 
@@ -297,12 +325,12 @@ class PurchaseBill(Base):
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
     bill_number = Column(String(100), nullable=True)
-    bill_date = Column(DateTime, default=datetime.utcnow)
+    bill_date = Column(DateTime, default=get_local_now)
     items = Column(Text, nullable=True)          # JSON: [{name, qty, unit_price, total}]
     total_amount = Column(Float, default=0.0)
     image_path = Column(String(500), nullable=True)  # Scanned bill image
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
 
     supplier = relationship("Supplier", back_populates="purchase_bills")
 
@@ -323,7 +351,7 @@ class StockHistory(Base):
     quantity_after = Column(Integer, nullable=False)
     reason = Column(Text, nullable=True)
     changed_by = Column(String(200), default="ระบบ")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
 
 
 # ─── Appointments (Calendar) ─────────────────────────────────────────────────
@@ -341,7 +369,7 @@ class Appointment(Base):
     service_type = Column(String(200), nullable=True)      # e.g. "เปลี่ยนน้ำมันเครื่อง"
     notes = Column(Text, nullable=True)
     status = Column(String(30), default="confirmed")       # confirmed / pending / cancelled / completed
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
 
 
 # ─── Expenses (Utility bills etc.) ────────────────────────────────────────────
@@ -353,8 +381,56 @@ class Expense(Base):
     category = Column(String(100), nullable=False)         # ค่าไฟ, ค่าน้ำ, ค่าเช่า, อื่นๆ
     description = Column(Text, nullable=True)
     amount = Column(Float, nullable=False)
-    expense_date = Column(DateTime, default=datetime.utcnow)
+    expense_date = Column(DateTime, default=get_local_now)
     image_path = Column(String(500), nullable=True)        # Bill image
     added_by = Column(String(200), default="ระบบ")
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_local_now)
+
+
+# ─── Payments (money actually received) ──────────────────────────────────────
+
+class PaymentMethod:
+    CASH = "เงินสด"
+    TRANSFER = "โอน"
+    CARD = "บัตร"
+
+
+class Payment(Base):
+    """Money received for a repair ticket or a POS sale. A ticket may have several (deposit + rest)."""
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("service_tickets.id"), nullable=True, index=True)
+    work_order_id = Column(Integer, ForeignKey("work_orders.id"), nullable=True, index=True)
+    amount = Column(Float, nullable=False)
+    method = Column(String(30), default=PaymentMethod.CASH)
+    paid_at = Column(DateTime, default=get_local_now, index=True)
+    note = Column(String(300), nullable=True)
+    received_by = Column(String(200), nullable=True)
+    created_at = Column(DateTime, default=get_local_now)
+
+    ticket = relationship("ServiceTicket", back_populates="payments")
+
+
+# ─── Job photos (before / after) ─────────────────────────────────────────────
+
+class TicketPhoto(Base):
+    __tablename__ = "ticket_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("service_tickets.id"), nullable=False, index=True)
+    path = Column(String(500), nullable=False)          # /static/uploads/tickets/...
+    kind = Column(String(20), default="before")         # 'before' | 'after'
+    created_at = Column(DateTime, default=get_local_now)
+
+    ticket = relationship("ServiceTicket", back_populates="photos")
+
+
+# ─── Shop settings shared by every computer (key/value) ──────────────────────
+
+class AppSetting(Base):
+    __tablename__ = "app_settings"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(Text, nullable=True)

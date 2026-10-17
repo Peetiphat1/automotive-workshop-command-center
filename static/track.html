@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/static/vendor/lucide-1.59.0.min.js"></script>
     <link rel="stylesheet" href="/static/track.css">
 </head>
 <body>
@@ -18,11 +18,15 @@
             <div class="brand">
                 <div class="brand-icon"><i data-lucide="wrench"></i></div>
                 <div>
-                    <h1>R.O.S.E. Garage Tracker</h1>
+                    <h1>Zero Garage Tracker</h1>
                     <p>ระบบเช็คสถานะงานซ่อมรถยนต์ออนไลน์</p>
                 </div>
             </div>
-            <div class="header-nav">
+            <div class="header-nav" style="display:flex;align-items:center;gap:10px;">
+                <div class="lang-switch-toggle" style="display:inline-flex;align-items:center;background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:3px;gap:2px;">
+                    <button type="button" class="lang-toggle-btn active" id="track-lang-th" onclick="setTrackLanguage('th')" style="background:transparent;border:none;color:var(--text-muted);font-size:0.75rem;font-weight:600;padding:4px 9px;border-radius:12px;cursor:pointer;color:#fff;">🇹🇭 TH</button>
+                    <button type="button" class="lang-toggle-btn" id="track-lang-en" onclick="setTrackLanguage('en')" style="background:transparent;border:none;color:var(--text-muted);font-size:0.75rem;font-weight:600;padding:4px 9px;border-radius:12px;cursor:pointer;">🇬🇧 EN</button>
+                </div>
                 <a href="/dashboard" class="nav-btn"><i data-lucide="layout-dashboard"></i> Dashboard</a>
             </div>
         </header>
@@ -54,7 +58,7 @@
         </section>
 
         <footer class="track-footer">
-            <p>© 2026 Automotive Workshop Command Center — R.O.S.E. Framework</p>
+            <p>© 2026 Zero Garage Command Center — ระบบติดตามสถานะงานซ่อม</p>
         </footer>
     </div>
 

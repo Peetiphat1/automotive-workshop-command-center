@@ -1474,3 +1474,42 @@ textarea:focus, select:focus, input[type="text"]:focus {
 .toast.success i { color: var(--color-success); }
 .toast.warning i { color: var(--color-warning); }
 .toast.danger i { color: var(--color-danger); }
+
+/* ── Language Switcher Controls ── */
+.lang-switch-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+    backdrop-filter: blur(8px);
+    margin-right: 4px;
+}
+.lang-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-body);
+}
+.lang-toggle-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.08);
+}
+.lang-toggle-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+    font-weight: 700;
+}
+

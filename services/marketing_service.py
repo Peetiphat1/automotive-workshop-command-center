@@ -4,7 +4,7 @@ Marketing Service — Module 4 business logic (Retention Engine)
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from fastapi import HTTPException
@@ -48,7 +48,7 @@ def _scan_vehicles_for_triggers(db: Session) -> List[Dict]:
     Query all vehicles and flag those matching maintenance thresholds.
     Multiple triggers per vehicle produce separate tasks.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     oil_km_limit = settings.OIL_CHANGE_KM
     oil_month_limit = timedelta(days=settings.OIL_CHANGE_MONTHS * 30)
     battery_limit = timedelta(days=settings.BATTERY_CHANGE_YEARS * 365)
@@ -129,7 +129,7 @@ def run_marketing_cron(db: Session) -> MarketingTriggerResponse:
     if not flagged:
         return MarketingTriggerResponse(
             run_id=run_id,
-            scan_date=datetime.utcnow().isoformat(),
+            scan_date=datetime.now(timezone.utc).isoformat(),
             total_flagged=0,
             tasks_generated=0,
             trigger_breakdown={},
@@ -138,7 +138,7 @@ def run_marketing_cron(db: Session) -> MarketingTriggerResponse:
 
     # Run MarketingGraph
     result: MarketingState = marketing_graph.invoke({
-        "scan_date": datetime.utcnow().isoformat(),
+        "scan_date": datetime.now(timezone.utc).isoformat(),
         "flagged_vehicles": flagged,
         "generated_tasks": [],
         "scan_summary": {},
@@ -238,7 +238,7 @@ def approve_task(db: Session, task_id: int, req: MarketingApproveRequest) -> Mar
 
     task.status = MarketingTaskStatus.DISPATCHED
     task.approved_by = req.approved_by
-    task.dispatched_at = datetime.utcnow()
+    task.dispatched_at = datetime.now(timezone.utc)
     task.line_message_id = dispatch_result.get("message_id", "MOCK_ID")
 
     db.commit()

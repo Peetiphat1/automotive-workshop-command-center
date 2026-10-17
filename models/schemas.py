@@ -8,7 +8,21 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+import re as _re
+
+
+def _check_thai_phone(v):
+    """Accept Thai numbers like 081-234-5678, 02 894 1234, +66812345678 (9-10 digits)."""
+    if v is None:
+        return v
+    v = v.strip()
+    digits = _re.sub(r"[\s\-().]", "", v)
+    if digits.startswith("+66"):
+        digits = "0" + digits[3:]
+    if not _re.fullmatch(r"0\d{8,9}", digits):
+        raise ValueError("เบอร์โทรไม่ถูกต้อง (ต้องเป็นตัวเลข 9-10 หลัก เช่น 0812345678)")
+    return v
 
 
 # ─── Status enums (mirrors db_models string constants) ───────────────────────
@@ -46,20 +60,36 @@ class TicketIngestRequest(BaseModel):
         min_length=5,
         description="Thai text describing symptoms and car info.",
     )
+    customer_name: Optional[str] = Field(None, description="Customer name.")
     customer_phone: Optional[str] = Field(None, description="Customer phone for profile lookup.")
+    customer_line_id: Optional[str] = Field(None, description="Customer LINE ID.")
     vehicle_plate: Optional[str] = Field(None, description="Vehicle plate for profile lookup.")
+    car_model: Optional[str] = Field(None, description="Car make and model.")
+    mechanic_name: Optional[str] = Field(None, description="Mechanic assigned to work order.")
     mileage: Optional[int] = Field(None, ge=0, description="Current odometer reading (km).")
+    stock_links: Optional[List["StockLinkSchema"]] = Field(
+        None, description="Lines picked from stock on the intake form (deducted when the job is completed)."
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "raw_input": "รถ Toyota Camry ทะเบียน กข 1234 กรุงเทพ เสียงดังจากเบรคหน้า ผ้าเบรคสึกมาก วิ่งมา 52,000 กม.",
+                "customer_name": "สมเกียรติ สว่างวงศ์",
                 "customer_phone": "0812345678",
                 "vehicle_plate": "กข 1234 กรุงเทพ",
+                "car_model": "Toyota Camry 2020",
+                "mechanic_name": "ช่างสมชาย",
                 "mileage": 52000,
             }
         }
     }
+
+
+class StockLinkSchema(BaseModel):
+    name: str
+    stock_item_id: int
+    qty: Optional[float] = Field(None, gt=0)
 
 
 class LineItemSchema(BaseModel):
@@ -69,6 +99,11 @@ class LineItemSchema(BaseModel):
     unit_price: float
     total: float
     type: Optional[str] = None  # 'part' | 'labor'
+    stock_item_id: Optional[int] = None
+    stock_deducted: Optional[bool] = None
+
+
+TicketIngestRequest.model_rebuild()
 
 
 class DiagnosedIssueSchema(BaseModel):
@@ -80,8 +115,13 @@ class DiagnosedIssueSchema(BaseModel):
 class TicketResponse(BaseModel):
     id: int
     vehicle_plate: Optional[str] = None
+    customer_id: Optional[int] = None
     customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_line_id: Optional[str] = None
     car_model: Optional[str] = None
+    mileage: Optional[int] = None
+    mechanic_name: Optional[str] = None
     raw_input: str
     extracted_symptoms: List[str] = []
     diagnosed_issues: List[DiagnosedIssueSchema] = []
@@ -98,6 +138,26 @@ class TicketResponse(BaseModel):
     final_cost: Optional[float] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+    # Payments
+    amount_due: float = 0.0
+    amount_paid: float = 0.0
+    balance_due: float = 0.0
+    payment_status: str = "unpaid"   # 'unpaid' | 'partial' | 'paid' | 'none'
+
+    # Customer approval through LINE link
+    customer_decision: Optional[str] = None
+    customer_decision_at: Optional[datetime] = None
+    customer_decision_note: Optional[str] = None
+    approval_link_sent: bool = False
+
+    # Warranty
+    warranty_months: Optional[int] = None
+    warranty_note: Optional[str] = None
+    warranty_until: Optional[datetime] = None
+
+    photos: List[dict] = []
 
     model_config = {"from_attributes": True}
 
@@ -119,6 +179,58 @@ class TicketApproveRequest(BaseModel):
             }
         }
     }
+
+
+class TicketCompleteRequest(BaseModel):
+    completed_by: Optional[str] = Field("ช่างประจำ", description="Name of mechanic or cashier closing work.")
+    final_cost: Optional[float] = Field(None, ge=0, description="Final confirmed cost.")
+    completion_notes: Optional[str] = Field(None, description="Remarks on completed work.")
+    warranty_months: Optional[int] = Field(None, ge=0, le=120, description="Warranty given on this job (months).")
+    warranty_note: Optional[str] = Field(None, max_length=300, description="What the warranty covers.")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "completed_by": "ช่างสมชาย",
+                "final_cost": 3740.0,
+                "completion_notes": "ซ่อมบำรุงและทดสอบระบบเรียบร้อย พร้อมส่งมอบรถ",
+            }
+        }
+    }
+
+
+class TicketUpdateRequest(BaseModel):
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_line_id: Optional[str] = None
+    vehicle_plate: Optional[str] = None
+    car_model: Optional[str] = None
+    mileage: Optional[int] = None
+    mechanic_name: Optional[str] = None
+    status: Optional[TicketStatusEnum] = None
+    raw_input: Optional[str] = None
+    extracted_symptoms: Optional[List[str]] = None
+    line_items: Optional[List[LineItemSchema]] = None
+    estimated_labor_cost: Optional[float] = None
+    estimated_parts_cost: Optional[float] = None
+    total_estimated_cost: Optional[float] = None
+    final_cost: Optional[float] = None
+    mechanic_notes: Optional[str] = None
+    warranty_months: Optional[int] = Field(None, ge=0, le=120)
+    warranty_note: Optional[str] = Field(None, max_length=300)
+
+
+class PaymentCreate(BaseModel):
+    amount: float = Field(..., gt=0)
+    method: str = Field("เงินสด", max_length=30)
+    note: Optional[str] = Field(None, max_length=300)
+    received_by: Optional[str] = Field(None, max_length=200)
+    paid_at: Optional[datetime] = None
+
+
+class QuoteDecision(BaseModel):
+    decision: str = Field(..., pattern="^(approve|decline)$")
+    note: Optional[str] = Field(None, max_length=500)
 
 
 class TicketListResponse(BaseModel):
@@ -242,10 +354,17 @@ class BillListResponse(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class CustomerCreate(BaseModel):
-    name: str = Field(..., min_length=2)
-    phone: str = Field(..., pattern=r"^0[6-9]\d{8}$", description="Thai mobile number (10 digits).")
-    line_id: Optional[str] = None
-    email: Optional[str] = None
+    name: str = Field(..., min_length=1, description="ชื่อลูกค้า")
+    phone: str = Field(..., min_length=3, description="เบอร์โทรศัพท์")
+    line_id: Optional[str] = Field(None, description="LINE ID เช่น sommai_j, @garage")
+    email: Optional[str] = Field(None, description="อีเมล")
+    plate: Optional[str] = Field(None, description="ทะเบียนรถเริ่มต้น (ถ้ามี)")
+    brand: Optional[str] = Field(None, description="ยี่ห้อรถ เช่น Toyota, Honda")
+    model: Optional[str] = Field(None, description="รุ่นรถ เช่น Camry, Civic")
+    year: Optional[int] = Field(None, description="ปี ค.ศ.")
+    mileage: Optional[int] = Field(None, ge=0, description="เลขไมล์ปัจจุบัน (กม.)")
+
+    _phone_ok = field_validator("phone")(_check_thai_phone)
 
     model_config = {
         "json_schema_extra": {
@@ -261,9 +380,11 @@ class CustomerCreate(BaseModel):
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
-    phone: Optional[str] = Field(None, pattern=r"^0[6-9]\d{8}$")
+    phone: Optional[str] = None
     line_id: Optional[str] = None
     email: Optional[str] = None
+
+    _phone_ok = field_validator("phone")(_check_thai_phone)
 
 
 class CustomerResponse(BaseModel):
@@ -290,9 +411,9 @@ class HealthWatchlistItemSchema(BaseModel):
 
 
 class VehicleCreate(BaseModel):
-    plate: str = Field(..., min_length=5, description="Thai vehicle plate number.")
-    brand: str
-    model: str
+    plate: str = Field(..., min_length=2, description="Thai vehicle plate number.")
+    brand: Optional[str] = "Toyota"
+    model: Optional[str] = "รถยนต์"
     year: Optional[int] = Field(None, ge=1980, le=2035)
     color: Optional[str] = None
     current_mileage: int = Field(default=0, ge=0)

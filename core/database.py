@@ -11,7 +11,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
 engine = create_engine(
     settings.DATABASE_URL,
     connect_args=connect_args,
-    echo=settings.DEBUG,
+    echo=False,
 )
 
 # ── Session factory ───────────────────────────────────────────────────────────

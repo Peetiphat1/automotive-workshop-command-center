@@ -4,7 +4,7 @@ Finance Service — Module 2 business logic
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import HTTPException, status
@@ -12,7 +12,8 @@ from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
 from agents.bill_agent import BillState, bill_graph, mock_ocr_image
-from models.db_models import BillStatus, FinanceBill, LedgerEntry
+from models.db_models import BillStatus, FinanceBill, LedgerEntry, ServiceTicket, TicketStatus, get_local_now
+from services.ticket_service import ticket_ledger_entries, ticket_plate
 from models.schemas import (
     BillConfirmRequest, BillLineItemSchema, BillParseTextRequest,
     BillResponse, FinanceSummaryResponse, LedgerEntrySchema, PLInsight,
@@ -232,12 +233,12 @@ def confirm_bill(db: Session, bill_id: int, req: BillConfirmRequest) -> BillResp
 
     bill.status = BillStatus.CONFIRMED
     bill.confirmed_by = req.confirmed_by
-    bill.confirmed_at = datetime.utcnow()
+    bill.confirmed_at = get_local_now()
     bill.notes = req.notes
 
     # Write to general ledger
     ledger_amount = bill.extracted_total or bill.calculated_total or 0.0
-    entry_date = req.entry_date or datetime.utcnow()
+    entry_date = req.entry_date or get_local_now()
 
     ledger = LedgerEntry(
         bill_id=bill.id,
@@ -262,6 +263,36 @@ def get_finance_summary(db: Session, year: int, month: int) -> FinanceSummaryRes
         raise HTTPException(status_code=400, detail="Month must be between 1 and 12.")
     if year < 2000 or year > 2100:
         raise HTTPException(status_code=400, detail="Invalid year.")
+
+    # Auto-reconcile completed/approved service tickets for this period to guarantee no revenue is missed
+    try:
+        active_tickets = db.query(ServiceTicket).filter(
+            ServiceTicket.status.in_([TicketStatus.COMPLETED, TicketStatus.APPROVED])
+        ).all()
+        for ct in active_tickets:
+            c_cost = ct.final_cost or ct.total_estimated_cost or 0.0
+            if c_cost <= 0:
+                continue
+            c_date = ct.updated_at or ct.approved_at or ct.created_at or get_local_now()
+            if c_date.year == year and c_date.month == month:
+                entry = ticket_ledger_entries(db, ct.id).first()
+                plate_str = ticket_plate(ct)
+                status_str = "เสร็จสิ้น" if ct.status == TicketStatus.COMPLETED else "อนุมัติ"
+                if not entry:
+                    db.add(LedgerEntry(
+                        bill_id=None,
+                        entry_type="income",
+                        category="repair_service",
+                        amount=c_cost,
+                        description=f"รายรับค่าซ่อมรถ ({status_str}) — Ticket #{ct.id} ({plate_str})",
+                        entry_date=c_date,
+                    ))
+                    db.commit()
+                elif entry.amount != c_cost:
+                    entry.amount = c_cost
+                    db.commit()
+    except Exception:
+        db.rollback()
 
     entries = (
         db.query(LedgerEntry)

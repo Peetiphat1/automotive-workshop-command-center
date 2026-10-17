@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบเสนอราคางานซ่อม</title>
+    <link rel="icon" href="/static/favicon.ico">
+    <style>
+        :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --line:rgba(255,255,255,0.1); --green:#10b981; --red:#ef4444; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg); color:var(--text); font-family:'Sarabun','Noto Sans Thai',system-ui,sans-serif; padding:16px; }
+        .card { max-width:520px; margin:0 auto; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; }
+        h1 { font-size:1.2rem; margin:0 0 4px; }
+        .muted { color:var(--muted); font-size:0.88rem; }
+        table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.92rem; }
+        td { padding:8px 4px; border-bottom:1px solid var(--line); vertical-align:top; }
+        td.r { text-align:right; white-space:nowrap; }
+        .total { display:flex; justify-content:space-between; font-size:1.25rem; font-weight:800; margin:6px 0 16px; }
+        textarea { width:100%; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:var(--text); padding:10px; font:inherit; min-height:60px; }
+        .btns { display:flex; gap:10px; margin-top:12px; }
+        button { flex:1; border:none; border-radius:12px; padding:14px; font:inherit; font-weight:700; font-size:1rem; cursor:pointer; color:#fff; }
+        .ok { background:var(--green); } .no { background:transparent; border:1px solid var(--red); color:#fca5a5; }
+        .banner { padding:14px; border-radius:12px; text-align:center; font-weight:700; margin-top:10px; }
+        .b-ok { background:rgba(16,185,129,0.15); color:#6ee7b7; } .b-no { background:rgba(239,68,68,0.15); color:#fca5a5; }
+    </style>
+</head>
+<body>
+    <div class="card" id="app"><p class="muted">กำลังโหลด...</p></div>
+<script>
+(function () {
+    const token = decodeURIComponent(location.pathname.split('/').pop() || '');
+    const app = document.getElementById('app');
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const baht = n => '฿' + (Number(n) || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+
+    function render(q) {
+        const decided = q.decision === 'approved' ? `<div class="banner b-ok">✅ คุณอนุมัติใบเสนอราคานี้แล้ว — อู่จะเริ่มดำเนินการซ่อม</div>`
+            : q.decision === 'declined' ? `<div class="banner b-no">คุณเลือกไม่อนุมัติ — อู่จะติดต่อกลับ</div>`
+            : !q.can_decide ? `<div class="banner b-ok">งานนี้ดำเนินการแล้ว (${esc(q.status)})</div>` : '';
+        app.innerHTML = `
+            <h1>🔧 ${esc(q.shop_name || 'อู่ซ่อมรถ')}</h1>
+            <div class="muted">ใบเสนอราคางานซ่อม #${q.ticket_id}${q.shop_phone ? ` · โทร <a href="tel:${esc(q.shop_phone)}" style="color:#93c5fd;">${esc(q.shop_phone)}</a>` : ''}</div>
+            <div style="margin-top:12px;">🚗 <strong>${esc(q.plate)}</strong> ${esc(q.car_model || '')}${q.customer_name ? `<div class="muted">เรียนคุณ ${esc(q.customer_name)}</div>` : ''}</div>
+            <table>${q.items.map(i => `<tr><td>${esc(i.name)}${i.qty > 1 ? ` × ${i.qty}` : ''}</td><td class="r">${baht(i.total)}</td></tr>`).join('') || '<tr><td class="muted">ไม่มีรายการ</td></tr>'}</table>
+            <div class="total"><span>รวมประมาณ</span><span>${baht(q.total)}</span></div>
+            ${decided || `
+                <label class="muted" for="note">ข้อความถึงอู่ (ถ้ามี)</label>
+                <textarea id="note" maxlength="500" placeholder="เช่น ขอทำเฉพาะรายการแรกก่อน"></textarea>
+                <div class="btns">
+                    <button class="no" onclick="decide('decline')">ไม่อนุมัติ</button>
+                    <button class="ok" onclick="decide('approve')">✅ อนุมัติให้ซ่อม</button>
+                </div>
+                <p class="muted" style="font-size:0.78rem;margin-top:12px;">ราคาเป็นการประเมินเบื้องต้น หากพบปัญหาเพิ่มเติมอู่จะแจ้งก่อนดำเนินการ</p>`}
+        `;
+    }
+
+    window.decide = async function (decision) {
+        if (decision === 'approve' && !confirm('ยืนยันอนุมัติให้ซ่อมตามใบเสนอราคานี้?')) return;
+        const note = document.getElementById('note')?.value || '';
+        app.querySelectorAll('button').forEach(b => b.disabled = true);
+        try {
+            const r = await fetch(`/api/v1/public/quote/${encodeURIComponent(token)}/decision`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision, note }),
+            });
+            const body = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(body.detail || 'ส่งคำตอบไม่สำเร็จ');
+            render(body);
+        } catch (e) {
+            alert(e.message);
+            app.querySelectorAll('button').forEach(b => b.disabled = false);
+        }
+    };
+
+    fetch(`/api/v1/public/quote/${encodeURIComponent(token)}`)
+        .then(async r => { const b = await r.json().catch(() => ({})); if (!r.ok) throw new Error(b.detail || 'ไม่พบใบเสนอราคา'); return b; })
+        .then(render)
+        .catch(e => { app.innerHTML = `<h1>ไม่พบใบเสนอราคา</h1><p class="muted">${esc(e.message)}</p>`; });
+})();
+</script>
+</body>
+</html>

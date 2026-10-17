@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 User Manual — Automotive Workshop Command Center</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="/static/vendor/lucide-1.59.0.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #07090e;
+            --bg-surface: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-card-hover: rgba(51, 65, 85, 0.8);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.25);
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(59, 130, 246, 0.4);
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── SIDEBAR ── */
+        .manual-sidebar {
+            width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-title h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title span {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* Language Toggle */
+        .lang-switch-box {
+            display: flex;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 3px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .lang-pill {
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 0.8rem;
+            border-radius: 7px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .lang-pill.active {
+            color: #fff;
+            background: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+        .lang-pill:not(.active) {
+            color: var(--text-secondary);
+        }
+        .lang-pill:not(.active):hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px 10px 38px;
+            color: white;
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        .nav-group-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin: 16px 8px 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-link i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .quick-actions {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-quick {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-dash {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+        .btn-dash:hover { background: #2563eb; }
+
+        /* ── MAIN CONTENT ── */
+        .manual-main {
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow-y: auto;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 36px 40px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-banner h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-banner p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 750px;
+            line-height: 1.7;
+        }
+
+        /* ── SECTION CARDS ── */
+        .doc-section {
+            margin-bottom: 48px;
+            scroll-margin-top: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-header i {
+            color: var(--accent-cyan);
+            width: 26px;
+            height: 26px;
+        }
+
+        .section-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .feature-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .feature-box:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .feat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .feat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .feat-icon.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .feat-icon.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .feat-icon.purple { background: rgba(139, 92, 246, 0.15); color: #c084fc; }
+
+        .feature-box h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .feature-box p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ── STEP LISTS ── */
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .step-info h4 {
+            font-size: 0.95rem;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .step-info p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── URL TABLE ── */
+        .url-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .url-table th, .url-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .url-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .url-table a {
+            color: #38bdf8;
+            text-decoration: none;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+        }
+
+        .url-table a:hover { text-decoration: underline; }
+
+        .badge-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge-info { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .manual-sidebar { width: 100%; height: auto; position: static; }
+            .manual-main { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── 1. SIDEBAR MENU ── -->
+    <aside class="manual-sidebar">
+        <div class="brand-header">
+            <div class="brand-icon"><i data-lucide="book-open"></i></div>
+            <div class="brand-title">
+                <h2>User Manual</h2>
+                <span>COMMAND CENTER v1.0</span>
+            </div>
+        </div>
+
+        <!-- Language Switcher Box -->
+        <div class="lang-switch-box">
+            <a href="/manual" class="lang-pill">🇹🇭 ภาษาไทย</a>
+            <a href="/manual_en" class="lang-pill active">🇬🇧 English</a>
+        </div>
+
+        <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="docSearch" placeholder="Search documentation..." onkeyup="filterDocs()">
+        </div>
+
+        <div class="nav-group-title">Table of Contents</div>
+        <nav class="nav-links">
+            <a href="#overview" class="nav-link"><i data-lucide="info"></i> 1. System Overview</a>
+            <a href="#launch" class="nav-link"><i data-lucide="play-circle"></i> 2. Getting Started</a>
+            <a href="#urls" class="nav-link"><i data-lucide="globe"></i> 3. Important URLs</a>
+            <a href="#dashboard" class="nav-link"><i data-lucide="layout-dashboard"></i> 4.1 Dashboard Overview</a>
+            <a href="#repairs" class="nav-link"><i data-lucide="wrench"></i> 4.2 Repairs & Tickets</a>
+            <a href="#appointments" class="nav-link"><i data-lucide="calendar"></i> 4.3 Appointments Calendar</a>
+            <a href="#customers" class="nav-link"><i data-lucide="users"></i> 4.4 Customer 360° Profile</a>
+            <a href="#stock" class="nav-link"><i data-lucide="package"></i> 4.5 Stock & Inventory</a>
+            <a href="#purchases" class="nav-link"><i data-lucide="truck"></i> 4.6 Purchases & Suppliers</a>
+            <a href="#finance" class="nav-link"><i data-lucide="banknote"></i> 4.7 Finance & Expenses</a>
+            <a href="#reports" class="nav-link"><i data-lucide="pie-chart"></i> 4.8 7 Standard Reports</a>
+            <a href="#scanner" class="nav-link"><i data-lucide="scan-line"></i> 4.9 OCR Scanner</a>
+            <a href="#tracker" class="nav-link"><i data-lucide="external-link"></i> 4.10 Public Repair Tracker</a>
+            <a href="#troubleshooting" class="nav-link"><i data-lucide="help-circle"></i> 5. Troubleshooting & Backup</a>
+        </nav>
+
+        <div class="quick-actions">
+            <a href="/dashboard" class="btn-quick btn-dash"><i data-lucide="arrow-left"></i> Return to Dashboard</a>
+            <a href="/docs" target="_blank" class="btn-quick" style="background:rgba(255,255,255,0.05); color:white;"><i data-lucide="code"></i> Swagger API Docs</a>
+        </div>
+    </aside>
+
+    <!-- ── 2. MAIN MANUAL WORKSPACE ── -->
+    <main class="manual-main">
+        <div class="hero-banner">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                <div class="hero-badge"><i data-lucide="sparkles"></i> Operations & Technical Documentation</div>
+                <div style="display:flex; gap:6px; background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px;">
+                    <a href="/manual" style="padding:4px 10px; border-radius:6px; font-size:0.78rem; color:var(--text-secondary); text-decoration:none;">🇹🇭 ภาษาไทย</a>
+                    <a href="/manual_en" style="padding:4px 10px; border-radius:6px; font-size:0.78rem; font-weight:600; background:var(--primary); color:#fff; text-decoration:none;">🇬🇧 English</a>
+                </div>
+            </div>
+            <h1>Automotive Workshop Command Center</h1>
+            <p>Complete User & Operations Manual for the All-in-One Workshop Management Platform and R.O.S.E. AI Copilot. Covers vehicle intake, automated diagnosis, inventory control, calendar scheduling, P&L reporting, and customer tracking.</p>
+        </div>
+
+        <!-- 1. OVERVIEW -->
+        <section id="overview" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="layers"></i>
+                <h2>1. System Overview & Architecture</h2>
+            </div>
+            <div class="content-card">
+                <p style="margin-bottom:16px;">Engineered to streamline auto repair operations, eliminate paper bottlenecks, and provide real-time visibility across all workshop activities:</p>
+                <div class="grid-3">
+                    <div class="feature-box">
+                        <div class="feat-icon blue"><i data-lucide="cpu"></i></div>
+                        <h4>AI Diagnosis & Pricing</h4>
+                        <p>Extract vehicle symptoms and calculate accurate labor and replacement parts estimates via R.O.S.E. AI Copilot.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feat-icon green"><i data-lucide="database"></i></div>
+                        <h4>SQLite Database</h4>
+                        <p>Single-file database (<code>workshop_demo.db</code>). Fast, resilient, zero-maintenance, and effortless to back up.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feat-icon amber"><i data-lucide="smartphone"></i></div>
+                        <h4>LINE & Public Tracker</h4>
+                        <p>Real-time vehicle status tracking accessible by vehicle owners 24/7 without requiring phone calls.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. LAUNCH & RUN -->
+        <section id="launch" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="play-circle"></i>
+                <h2>2. Getting Started (Launch & Stop)</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="monitor"></i> 3 Easy Ways to Launch</h3>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-info">
+                            <h4>Launch via Desktop Shortcut (Recommended)</h4>
+                            <p>Double-click the <strong>"Automotive Workshop Command Center"</strong> shortcut on your Desktop.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-info">
+                            <h4>Launch via Direct Batch File</h4>
+                            <p>Double-click <strong>"START Automotive Workshop.bat"</strong> located on your Desktop.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-info">
+                            <h4>Launch from Project Directory</h4>
+                            <p>Double-click <strong>"START.bat"</strong> (or <code>run.bat</code>) inside the root project directory.</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:20px; padding:12px 16px; background:rgba(59,130,246,0.1); border-left:4px solid var(--primary); border-radius:6px; font-size:0.85rem; color:#93c5fd;">
+                    💡 <strong>Note:</strong> Once launched, the server initializes and automatically opens your web browser to the Command Center at <code>http://localhost:8000/dashboard</code>.
+                </div>
+                <div style="margin-top:14px; padding:12px 16px; background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; border-radius:6px; font-size:0.85rem; color:#fca5a5;">
+                    🛑 <strong>How to Stop:</strong> Simply close the black Command Prompt console window, or press <code>Ctrl + C</code> inside the terminal.
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. IMPORTANT URLS -->
+        <section id="urls" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="globe"></i>
+                <h2>3. Important System URLs</h2>
+            </div>
+            <div class="content-card">
+                <table class="url-table">
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>Direct URL</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>🏠 Main Dashboard</strong></td>
+                            <td><a href="http://localhost:8000/dashboard" target="_blank">http://localhost:8000/dashboard</a></td>
+                            <td>Core management hub, KPI summaries, and active repair boards.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📦 Stock & Inventory</strong></td>
+                            <td><a href="http://localhost:8000/stock" target="_blank">http://localhost:8000/stock</a></td>
+                            <td>Parts catalog, inventory adjustments, and barcode tracking.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📷 AI OCR Scanner</strong></td>
+                            <td><a href="http://localhost:8000/scan" target="_blank">http://localhost:8000/scan</a></td>
+                            <td>Scan supplier parts bills and camera license plates.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🔍 Public Repair Tracker</strong></td>
+                            <td><a href="http://localhost:8000/track" target="_blank">http://localhost:8000/track</a></td>
+                            <td>Customer-facing real-time repair status portal.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📖 User Documentation</strong></td>
+                            <td><a href="http://localhost:8000/manual" target="_blank">http://localhost:8000/manual</a></td>
+                            <td>Interactive full documentation (Thai and English).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⚡ REST API Docs</strong></td>
+                            <td><a href="http://localhost:8000/docs" target="_blank">http://localhost:8000/docs</a></td>
+                            <td>Swagger UI API interactive test console for developers.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4.1 DASHBOARD -->
+        <section id="dashboard" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="layout-dashboard"></i>
+                <h2>4.1 Command Center Dashboard</h2>
+            </div>
+            <div class="content-card">
+                <div class="grid-2">
+                    <div>
+                        <h3><i data-lucide="bar-chart-2"></i> 4 Real-time KPI Cards</h3>
+                        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">Top metrics update continuously based on workshop operations:</p>
+                        <ul style="padding-left:20px; font-size:0.88rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+                            <li><strong>Total Revenue This Month:</strong> Summation of labor fees and parts billed across all approved tickets.</li>
+                            <li><strong>Active Repairs:</strong> Total count of vehicles currently in repair, plus count awaiting mechanic approval.</li>
+                            <li><strong>Low Stock Warning:</strong> Items dipping below their minimum reorder thresholds.</li>
+                            <li><strong>Today's Appointments:</strong> Scheduled arrivals for today. Click directly to open the booking calendar.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3><i data-lucide="bot"></i> R.O.S.E. AI Copilot (Right Dock)</h3>
+                        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">Ask questions in natural language or execute quick workshop actions:</p>
+                        <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:12px; font-family:'Fira Code', monospace; font-size:0.8rem; color:#38bdf8;">
+                            > "How much 5W-30 engine oil is left in stock?"<br>
+                            > "Is repair ticket #12 approved yet?"<br>
+                            > "Show revenue breakdown for this month"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.2 REPAIRS -->
+        <section id="repairs" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="wrench"></i>
+                <h2>4.2 Service Tickets & Intake System</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="clipboard-check"></i> New Intake Workflow</h3>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-info">
+                            <h4>Click "+ New Intake"</h4>
+                            <p>Located on the top right header or on the Repairs management tab.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-info">
+                            <h4>Enter Vehicle & Complaint Details</h4>
+                            <p>Input license plate number, customer name, contact phone, and customer-described symptoms (e.g. <em>"Front brake squealing, spongy pedal feel"</em>).</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-info">
+                            <h4>AI Auto-Calculates Labor & Parts</h4>
+                            <p>R.O.S.E. AI extracts structured symptoms, maps required replacement parts from stock, and computes initial labor and parts pricing.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-info">
+                            <h4>Approve Work & Finalize Repair</h4>
+                            <p>Technician lead clicks "Approve" to initiate work. Once physical service is finished, mark as "Complete Repair" to update inventory and log earnings.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.3 APPOINTMENTS -->
+        <section id="appointments" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="calendar"></i>
+                <h2>4.3 Appointments & Scheduling Calendar</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">Prevent workshop bottlenecks by distributing technician workload visually:</p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4><i data-lucide="plus-circle" style="width:16px; height:16px; display:inline;"></i> Booking New Appointments</h4>
+                        <p>Select customer, vehicle, date, time slot, requested services (periodic inspection, brake overhaul, tire balance), and assign a lead technician.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4><i data-lucide="check-circle" style="width:16px; height:16px; display:inline;"></i> Status Badges</h4>
+                        <p>
+                            <span class="badge-pill badge-success">Confirmed</span> Slot reserved<br>
+                            <span class="badge-pill badge-warning" style="margin-top:4px;">Pending</span> Awaiting customer confirmation<br>
+                            <span class="badge-pill badge-info" style="margin-top:4px;">Completed</span> Vehicle arrived and serviced
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.4 CUSTOMERS -->
+        <section id="customers" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="users"></i>
+                <h2>4.4 Customer 360° Profile</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="user-check"></i> Comprehensive Customer Intelligence</h3>
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">Click any customer name to open the Customer 360° intelligence modal:</p>
+                <div class="grid-3">
+                    <div class="feature-box">
+                        <h4>🚗 Owned Vehicles</h4>
+                        <p>Inspect all registered vehicles: Make, model, year, color, and latest odometer readings.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>💰 Total Lifetime Spend</h4>
+                        <p>Cumulative revenue contributed by the client to determine VIP tier status and discounts.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>📜 Complete Repair History</h4>
+                        <p>Chronological service history, parts replaced, past invoices, and warranty status.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.5 STOCK -->
+        <section id="stock" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="package"></i>
+                <h2>4.5 Stock & Inventory Management</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">Access via the <strong>"Stock"</strong> sidebar tab or direct URL: <code>http://localhost:8000/stock</code></p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4>📦 Parts Catalog & Categorization</h4>
+                        <p>Manage parts by SKU, category (Fluids, Filters, Brakes, Electrical, Suspension), wholesale cost, retail price, and reorder warning points.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>🔄 Fast Adjustments & Audit Trail</h4>
+                        <p>Click <strong>[+]</strong> to receive stock or <strong>[-]</strong> to withdraw parts, with mandatory audit remarks recorded for every inventory shift.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.6 PURCHASES & SUPPLIERS -->
+        <section id="purchases" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="truck"></i>
+                <h2>4.6 Purchases & Parts Suppliers</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">Manage vendor relationships and purchase invoices:</p>
+                <ul style="padding-left:20px; font-size:0.88rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+                    <li><strong>Suppliers Directory:</strong> Store vendor contacts, addresses, representative phone numbers, and payment terms (e.g. Net 30 days).</li>
+                    <li><strong>Purchase Bills:</strong> Log incoming stock orders, track payment obligations, and verify fulfillment.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 4.7 FINANCE & EXPENSES -->
+        <section id="finance" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="banknote"></i>
+                <h2>4.7 Finance & Expense Tracking</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">Keep workshop cash flow healthy with accurate overhead bookkeeping:</p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4>💸 Daily Expense Logging</h4>
+                        <p>Record overheads: electricity, water, internet, facility rent, tools & machinery, technician wages, and shop consumables.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>📈 Automated P&L Statement</h4>
+                        <p>Revenues automatically offset against cost of parts and operating expenses to calculate net monthly profits instantly.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.8 REPORTS -->
+        <section id="reports" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="pie-chart"></i>
+                <h2>4.8 7 Standard Management Reports</h2>
+            </div>
+            <div class="content-card">
+                <div class="grid-3">
+                    <div class="feature-box">
+                        <h4>1. Sales Report</h4>
+                        <p>Daily and monthly revenue breakdown by labor vs. replacement parts.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>2. Top Parts</h4>
+                        <p>Rankings of most frequently consumed and profitable spare parts.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>3. Stock Valuation</h4>
+                        <p>Total asset value of stock on hand (Cost Price vs. Retail Value).</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>4. Mechanic Performance</h4>
+                        <p>Jobs completed per technician, labor billings, and commission shares.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>5. Top Clients</h4>
+                        <p>VIP customer leaderboard by total cumulative spending.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>6. Profit & Loss (P&L)</h4>
+                        <p>Revenue minus Cost of Goods Sold minus Operational Expenses = Net Profit.</p>
+                    </div>
+                    <div class="feature-box" style="grid-column: span 3;">
+                        <h4>7. Sales Tax Report (VAT)</h4>
+                        <p>Calculates taxable base and output VAT (7%) ready for monthly tax return filing.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.9 SCANNER -->
+        <section id="scanner" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="scan-line"></i>
+                <h2>4.9 AI OCR Scanner (Bills & Plates)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">Access via direct URL: <code>http://localhost:8000/scan</code></p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4>🚘 License Plate OCR</h4>
+                        <p>Snap or upload vehicle front photos. The OCR automatically recognizes registration numbers and province to auto-fill repair tickets.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>🧾 Purchase Bill OCR</h4>
+                        <p>Upload supplier receipts. AI parses line items, unit costs, and automatically reconciles them with inventory stock.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.10 TRACKER -->
+        <section id="tracker" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="external-link"></i>
+                <h2>4.10 Public Repair Tracker for Customers</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">Customer direct URL: <strong><code>http://localhost:8000/track</code></strong></p>
+                <div style="background:rgba(255,255,255,0.02); border-radius:12px; padding:20px; border:1px solid var(--border);">
+                    <h4 style="color:#60a5fa; margin-bottom:8px;">💡 Customer Journey:</h4>
+                    <ol style="padding-left:20px; font-size:0.85rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:6px;">
+                        <li>Vehicle owner opens the tracker link on smartphone or PC.</li>
+                        <li>Enters their license plate number (e.g. <code>กข 1234</code>) or Ticket ID.</li>
+                        <li>Visual milestone tracker shows live progress: <em>Received ➔ Inspection ➔ Repair Active ➔ Ready for Pickup</em>.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. TROUBLESHOOTING & BACKUP -->
+        <section id="troubleshooting" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="help-circle"></i>
+                <h2>5. Troubleshooting, Backup & Data Migration</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="alert-circle"></i> Common Issues & Resolutions</h3>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">!</div>
+                        <div class="step-info">
+                            <h4>Port 8000 Already in Use</h4>
+                            <p>Open Command Prompt, run <code>netstat -ano | findstr :8000</code>, identify the PID, and execute <code>taskkill /PID &lt;PID&gt; /F</code>, then re-run <code>START.bat</code>.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">!</div>
+                        <div class="step-info">
+                            <h4>Database Backup & Device Transfer</h4>
+                            <p>All data is housed in <code>workshop_demo.db</code>. Use the top database icon <code>💾</code> or navigate to <strong>Settings ➔ Backup & Data Migration</strong> to download a snapshot or import onto a new computer. Automatic safety backups are created before any restore operation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function filterDocs() {
+            const query = document.getElementById('docSearch').value.toLowerCase();
+            const sections = document.querySelectorAll('.doc-section');
+            sections.forEach(sec => {
+                const text = sec.innerText.toLowerCase();
+                sec.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

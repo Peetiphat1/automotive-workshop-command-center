@@ -15,11 +15,13 @@ from __future__ import annotations
 import json
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI
+import hmac
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from core.config import settings
@@ -39,13 +41,18 @@ logger = logging.getLogger("workshop")
 # ─── Seed Data ────────────────────────────────────────────────────────────────
 
 def _seed(db):
-    """Idempotent seed — skips if data already exists."""
+    """Idempotent seed — skips if data already exists or .no_seed marker is present."""
+    import os as _os
+    _no_seed_flag = _os.path.join(_os.path.dirname(__file__), ".no_seed")
+    if _os.path.exists(_no_seed_flag):
+        logger.info("Found .no_seed marker — skipping demo seed (clean system mode).")
+        return
     if db.query(Customer).count() > 0:
         logger.info("Database already seeded — skipping.")
         return
 
     logger.info("Seeding database with demo data…")
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # ── Customers ─────────────────────────────────────────────────────────────
     c1 = Customer(name="สมชาย มีสุข",   phone="0812345678", line_id="somchai_m",   email="somchai@email.com")
@@ -349,15 +356,70 @@ def _seed(db):
 
 # ─── App lifecycle ────────────────────────────────────────────────────────────
 
+# Columns added after the first release — created on start-up for existing databases
+_ADDED_COLUMNS = [
+    ("stock_items", "bill_path", "VARCHAR(500)"),
+    ("service_tickets", "completed_at", "DATETIME"),
+    ("service_tickets", "approval_token", "VARCHAR(64)"),
+    ("service_tickets", "customer_decision", "VARCHAR(20)"),
+    ("service_tickets", "customer_decision_at", "DATETIME"),
+    ("service_tickets", "customer_decision_note", "TEXT"),
+    ("service_tickets", "warranty_months", "INTEGER"),
+    ("service_tickets", "warranty_note", "VARCHAR(300)"),
+]
+
+
+def _migrate_columns():
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    with engine.connect() as conn:
+        for table, column, ddl in _ADDED_COLUMNS:
+            if table not in insp.get_table_names():
+                continue
+            existing = {c["name"] for c in insp.get_columns(table)}
+            if column not in existing:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+                logger.info(f"Added column {table}.{column}")
+        conn.commit()
+
+
+async def _daily_backup_loop():
+    """Make one backup per day while the program is running (checks every 30 minutes)."""
+    import asyncio
+    from services import backup_service, shop_settings
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                extra = shop_settings.get_setting(db, "backup_extra_dir") or None
+            finally:
+                db.close()
+            await asyncio.to_thread(backup_service.run_daily_backup, extra)
+        except Exception as e:
+            logger.error(f"Daily backup loop error: {e}")
+        await asyncio.sleep(30 * 60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
+    import os
     Base.metadata.create_all(bind=engine)
+    try:
+        _migrate_columns()
+    except Exception as e:
+        logger.error(f"Column migration failed: {e}")
     db = SessionLocal()
     try:
         _seed(db)
     finally:
         db.close()
+    backup_task = None
+    if os.getenv("AUTO_BACKUP", "1") != "0":
+        backup_task = asyncio.create_task(_daily_backup_loop())
     yield
+    if backup_task:
+        backup_task.cancel()
     logger.info("Workshop Command Center shutting down.")
 
 
@@ -373,7 +435,7 @@ app = FastAPI(
         "| 2 | `/api/v1/finance` | Bill Pre-filling + Zero-Hallucination Math + P&L |\n"
         "| 3 | `/api/v1/customers` | Customer & Vehicle 360° Hub |\n"
         "| 4 | `/api/v1/marketing` | Autonomous Retention & Marketing Engine |\n\n"
-        "**Default API Key** (header `X-API-Key`): `workshop-secret-2026`\n\n"
+        "With `REQUIRE_PASSWORD=true` in `.env`, `/api/` routes require header `X-API-Key` (the shop password `MOCK_API_KEY`).\n\n"
         "*No external LLM API key required — all AI is deterministic mock for demo.*"
     ),
     version="1.0.0",
@@ -389,6 +451,29 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
+
+# ── Shop password guard for every /api/ route ─────────────────────────────────
+# Public exceptions: customer repair tracking page and the LINE webhook (verified by signature).
+_PUBLIC_API_PREFIXES = (
+    "/api/v1/tickets/track/",
+    "/api/v1/line/webhook",
+    "/api/v1/public/",          # customer quote approval page (random token per job)
+)
+
+
+@app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    path = request.url.path
+    if (
+        settings.REQUIRE_PASSWORD
+        and path.startswith("/api/")
+        and request.method != "OPTIONS"
+        and not path.startswith(_PUBLIC_API_PREFIXES)
+    ):
+        key = request.headers.get("x-api-key", "")
+        if not hmac.compare_digest(key.encode(), settings.MOCK_API_KEY.encode()):
+            return JSONResponse(status_code=401, content={"detail": "รหัสผ่านร้านไม่ถูกต้อง หรือยังไม่ได้เข้าสู่ระบบ"})
+    return await call_next(request)
 
 # ── Register routers ──────────────────────────────────────────────────────────
 app.include_router(
@@ -462,12 +547,58 @@ try:
 except ImportError:
     pass
 
+try:
+    from routers import reports as reports_router
+    app.include_router(
+        reports_router.router,
+        prefix="/api/v1/reports",
+        tags=["📊 Reports"],
+    )
+except ImportError:
+    pass
+
+try:
+    from routers import settings as settings_router
+    app.include_router(
+        settings_router.router,
+        prefix="/api/v1/settings",
+        tags=["⚙️ Settings & AI Integrations"],
+    )
+except ImportError:
+    pass
+
+try:
+    from routers import backup as backup_router
+    app.include_router(
+        backup_router.router,
+        prefix="/api/v1/backup",
+        tags=["💾 Backup & Data Transfer"],
+    )
+except ImportError as e:
+    logger.warning(f"Could not import backup_router: {e}")
+
+try:
+    from routers import line_webhook as line_webhook_router
+    app.include_router(
+        line_webhook_router.router,
+        prefix="/api/v1/line",
+        tags=["📱 LINE OA Webhook & Bot"],
+    )
+except ImportError as e:
+    logger.warning(f"Could not import line_webhook_router: {e}")
+
+
+
+from routers import payments as payments_router
+from routers import public_quote as public_quote_router
+app.include_router(payments_router.router, prefix="/api/v1/payments", tags=["💵 Payments"])
+app.include_router(public_quote_router.router, prefix="/api/v1/public", tags=["🌐 Public quote"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/dashboard", tags=["🏠 Dashboard"])
 def dashboard():
-    return FileResponse("static/index.html")
+    return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @app.get("/stock", tags=["🏠 Dashboard"])
 def stock_page():
@@ -480,6 +611,20 @@ def scan_page():
 @app.get("/track", tags=["🏠 Dashboard"])
 def track_page():
     return FileResponse("static/track.html")
+
+@app.get("/quote/{token}", tags=["🏠 Dashboard"])
+def quote_page(token: str):
+    return FileResponse("static/quote.html", headers={"Cache-Control": "no-store"})
+
+@app.get("/manual", tags=["🏠 Dashboard"])
+def manual_page(lang: str | None = None):
+    if lang and lang.lower() == "en":
+        return FileResponse("static/manual_en.html")
+    return FileResponse("static/manual.html")
+
+@app.get("/manual_en", tags=["🏠 Dashboard"])
+def manual_en_page():
+    return FileResponse("static/manual_en.html")
 
 
 
@@ -503,6 +648,12 @@ def root():
     }
 
 
+@app.get("/api/v1/auth/check", tags=["🏠 Health"])
+def auth_check():
+    """Login check — the middleware already rejected a wrong password."""
+    return {"ok": True}
+
+
 @app.get("/health", tags=["🏠 Health"])
 def health():
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}

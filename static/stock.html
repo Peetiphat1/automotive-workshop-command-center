@@ -2,9 +2,10 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>📦 Stock Management — R.O.S.E.</title>
+  <title>📦 Stock Management — Zero Garage</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/static/vendor/lucide-1.59.0.min.js"></script>
+    <script src="/static/auth.js?v=20261017_3"></script>
   <link rel="stylesheet" href="/static/chat.css">
   <link rel="stylesheet" href="/static/stock.css">
 </head>
@@ -16,7 +17,7 @@
       <div class="sidebar-brand">
           <div class="brand-icon-wrap"><i data-lucide="package"></i></div>
           <div>
-              <h1>R.O.S.E.</h1>
+              <h1>Zero Garage</h1>
               <span>Stock Manager</span>
           </div>
       </div>
@@ -43,6 +44,9 @@
                   <i data-lucide="search"></i>
                   <input type="text" id="search-input" placeholder="Search parts by name or SKU...">
               </div>
+              <button class="btn-scanner" id="btn-scanner" onclick="openScannerPanel()" title="Barcode Scanner">
+                  <i data-lucide="scan-barcode"></i> Scanner
+              </button>
               <button class="btn-primary" onclick="openAddModal()"><i data-lucide="plus"></i> Add Part</button>
           </div>
       </header>
@@ -60,6 +64,47 @@
     </main>
   </div>
   
+  <!-- Barcode Scanner Drawer -->
+  <div id="scanner-drawer" class="scanner-drawer" style="display:none;">
+    <div class="scanner-drawer-inner">
+      <div class="scanner-header">
+        <div class="scanner-title"><i data-lucide="scan-barcode"></i> Barcode Scanner</div>
+        <button class="scanner-close" onclick="closeScannerPanel()"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="scanner-input-row">
+        <div class="scanner-input-wrap">
+          <i data-lucide="barcode" class="scanner-prefix-icon"></i>
+          <input type="text" id="barcode-input" class="barcode-input"
+            placeholder="Scan barcode or type SKU..."
+            autocomplete="off" autocorrect="off" spellcheck="false"
+            oninput="onBarcodeInput(event)"
+            onkeydown="onBarcodeKeydown(event)">
+          <button class="barcode-clear-btn" onclick="clearBarcodeInput()" title="Clear"><i data-lucide="x-circle"></i></button>
+        </div>
+        <button class="btn-barcode-lookup" onclick="doBarcodeLookup()"><i data-lucide="search"></i> Lookup</button>
+      </div>
+
+      <div class="scanner-hint">Point your barcode scanner at a part or type a SKU and press <kbd>Enter</kbd></div>
+
+      <!-- Result panel -->
+      <div id="scanner-result" class="scanner-result" style="display:none;"></div>
+      <div id="scanner-not-found" class="scanner-not-found" style="display:none;">
+        <i data-lucide="package-x"></i>
+        <span id="scanner-nf-text">No item found for that SKU</span>
+      </div>
+
+      <!-- Recent scans -->
+      <div class="scanner-recent-header">Recent Scans</div>
+      <div id="scanner-recent" class="scanner-recent-list">
+        <div class="scanner-recent-empty">No recent scans yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scanner backdrop -->
+  <div id="scanner-backdrop" class="scanner-backdrop" style="display:none;" onclick="closeScannerPanel()"></div>
+
   <!-- Add/Edit Modal -->
   <div id="item-modal" class="modal-backdrop" style="display:none;">
       <div class="modal-box item-modal-box">
@@ -101,8 +146,16 @@
                       <input type="number" id="item-price" step="0.01">
                   </div>
                   <div class="form-group" style="grid-column: span 2;">
-                      <label>Image</label>
+                      <label>Product Photo (รูปสินค้า)</label>
                       <input type="file" id="item-image" accept="image/*">
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                      <label>Purchase Bill / Receipt (ใบเสร็จ / บิลซื้อ)</label>
+                      <div style="display:flex; gap:8px; align-items:center;">
+                          <input type="file" id="item-bill" accept="image/*" style="flex:1;">
+                          <button type="button" id="item-view-bill-btn" class="btn-cancel" style="display:none; padding:7px 12px; font-size:12px; white-space:nowrap; background:rgba(167,139,250,0.18); border:1px solid rgba(167,139,250,0.4); color:#c4b5fd; cursor:pointer;" onclick="viewCurrentPartBill()"><i data-lucide="receipt"></i> View Bill</button>
+                      </div>
+                      <input type="hidden" id="item-bill-path" value="">
                   </div>
               </div>
               <div class="modal-actions" style="margin-top:20px;">
@@ -110,6 +163,14 @@
                   <button type="button" class="btn-cancel" onclick="closeItemModal()">Cancel</button>
               </div>
           </form>
+      </div>
+  </div>
+
+  <!-- Bill Image Lightbox Overlay -->
+  <div id="bill-img-overlay" class="modal-backdrop" style="display:none; z-index:9999; background:rgba(0,0,0,0.85); align-items:center; justify-content:center;" onclick="if(event.target===this)closeBillLightbox()">
+      <div style="position:relative; max-width:92vw; max-height:92vh; display:flex; flex-direction:column; align-items:center;">
+          <button type="button" onclick="closeBillLightbox()" style="position:absolute; top:-38px; right:0; background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:1.6rem; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+          <img id="bill-img-el" src="" alt="Bill Image" style="max-width:90vw; max-height:86vh; object-fit:contain; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.8); background:#0f172a;">
       </div>
   </div>
 

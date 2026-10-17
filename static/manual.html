@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 คู่มือการใช้งานระบบ — Automotive Workshop Command Center</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="/static/vendor/lucide-1.59.0.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #07090e;
+            --bg-surface: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-card-hover: rgba(51, 65, 85, 0.8);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.25);
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(59, 130, 246, 0.4);
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Kanit', 'Sarabun', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── SIDEBAR ── */
+        .manual-sidebar {
+            width: 300px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-title h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title span {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* Language Toggle */
+        .lang-switch-box {
+            display: flex;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 3px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .lang-pill {
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 0.8rem;
+            border-radius: 7px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .lang-pill.active {
+            color: #fff;
+            background: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+        .lang-pill:not(.active) {
+            color: var(--text-secondary);
+        }
+        .lang-pill:not(.active):hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px 10px 38px;
+            color: white;
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        .nav-group-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin: 16px 8px 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-link i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .quick-actions {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-quick {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-dash {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+        .btn-dash:hover { background: #2563eb; }
+
+        /* ── MAIN CONTENT ── */
+        .manual-main {
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow-y: auto;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 36px 40px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #93c5fd;
+            margin-bottom: 12px;
+        }
+
+        .hero-banner h1 {
+            font-family: 'Outfit', 'Kanit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: white;
+            line-height: 1.2;
+        }
+
+        .hero-banner p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 750px;
+        }
+
+        .doc-section {
+            margin-bottom: 48px;
+            scroll-margin-top: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 24px;
+        }
+
+        .section-header i {
+            color: var(--primary);
+            width: 28px;
+            height: 28px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(8px);
+            transition: border-color 0.2s;
+        }
+
+        .content-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .content-card h3 {
+            font-size: 1.15rem;
+            color: #e2e8f0;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .feature-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .feature-box .feat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .feat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .feat-icon.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .feat-icon.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .feat-icon.purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+
+        .feature-box h4 {
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+        }
+
+        .feature-box p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .url-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .url-table th {
+            text-align: left;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .url-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+        }
+
+        .url-table a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+
+        .url-table a:hover {
+            background: rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+        }
+
+        .step-info h4 {
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .step-info p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge-info { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .manual-sidebar { width: 100%; height: auto; position: static; }
+            .manual-main { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── 1. SIDEBAR MENU ── -->
+    <aside class="manual-sidebar">
+        <div class="brand-header">
+            <div class="brand-icon"><i data-lucide="book-open"></i></div>
+            <div class="brand-title">
+                <h2>User Manual</h2>
+                <span>COMMAND CENTER v1.0</span>
+            </div>
+        </div>
+
+        <!-- Language Switcher Box -->
+        <div class="lang-switch-box">
+            <a href="/manual" class="lang-pill active">🇹🇭 ภาษาไทย</a>
+            <a href="/manual_en" class="lang-pill">🇬🇧 English</a>
+        </div>
+
+        <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="docSearch" placeholder="ค้นหาคู่มือ..." onkeyup="filterDocs()">
+        </div>
+
+        <div class="nav-group-title">สารบัญหลัก</div>
+        <nav class="nav-links">
+            <a href="#overview" class="nav-link"><i data-lucide="info"></i> 1. ภาพรวมระบบ</a>
+            <a href="#launch" class="nav-link"><i data-lucide="play-circle"></i> 2. การเปิด-ปิดระบบ</a>
+            <a href="#urls" class="nav-link"><i data-lucide="globe"></i> 3. ลิงก์เข้าใช้งานสำคัญ</a>
+            <a href="#dashboard" class="nav-link"><i data-lucide="layout-dashboard"></i> 4.1 Dashboard หลัก</a>
+            <a href="#repairs" class="nav-link"><i data-lucide="wrench"></i> 4.2 งานซ่อม & ใบรับรถ</a>
+            <a href="#appointments" class="nav-link"><i data-lucide="calendar"></i> 4.3 ปฏิทินนัดหมาย</a>
+            <a href="#customers" class="nav-link"><i data-lucide="users"></i> 4.4 ลูกค้า 360° Profile</a>
+            <a href="#stock" class="nav-link"><i data-lucide="package"></i> 4.5 จัดการคลังอะไหล่</a>
+            <a href="#purchases" class="nav-link"><i data-lucide="truck"></i> 4.6 จัดซื้อ & ผู้จำหน่าย</a>
+            <a href="#finance" class="nav-link"><i data-lucide="banknote"></i> 4.7 การเงิน & รายจ่าย</a>
+            <a href="#reports" class="nav-link"><i data-lucide="pie-chart"></i> 4.8 รายงาน & สถิติ 7 แบบ</a>
+            <a href="#scanner" class="nav-link"><i data-lucide="scan-line"></i> 4.9 สแกนเนอร์บิล & ป้าย</a>
+            <a href="#tracker" class="nav-link"><i data-lucide="external-link"></i> 4.10 ติดตามงานสำหรับลูกค้า</a>
+            <a href="#troubleshooting" class="nav-link"><i data-lucide="help-circle"></i> 5. แก้ปัญหา & สำรองข้อมูล</a>
+        </nav>
+
+        <div class="quick-actions">
+            <a href="/dashboard" class="btn-quick btn-dash"><i data-lucide="arrow-left"></i> กลับสู่ Dashboard</a>
+            <a href="/docs" target="_blank" class="btn-quick" style="background:rgba(255,255,255,0.05); color:white;"><i data-lucide="code"></i> API Swagger Docs</a>
+        </div>
+    </aside>
+
+    <!-- ── 2. MAIN MANUAL WORKSPACE ── -->
+    <main class="manual-main">
+        <div class="hero-banner">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                <div class="hero-badge"><i data-lucide="sparkles"></i> Documentation & Operations Guide</div>
+                <div style="display:flex; gap:6px; background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px;">
+                    <a href="/manual" style="padding:4px 10px; border-radius:6px; font-size:0.78rem; font-weight:600; background:var(--primary); color:#fff; text-decoration:none;">🇹🇭 ภาษาไทย</a>
+                    <a href="/manual_en" style="padding:4px 10px; border-radius:6px; font-size:0.78rem; color:var(--text-secondary); text-decoration:none;">🇬🇧 English</a>
+                </div>
+            </div>
+            <h1>คู่มือการใช้งานระบบศูนย์บริการอู่ซ่อมรถ</h1>
+            <p>Automotive Workshop Command Center & R.O.S.E. AI Copilot ระบบหลังบ้านอัจฉริยะแบบ All-in-One ครอบคลุมตั้งแต่การรับรถ, วิเคราะห์อาการ, สต็อกอะไหล่, ปฏิทินนัดหมาย, จนถึงสรุปงบการเงินและภาษี</p>
+        </div>
+
+        <!-- 1. OVERVIEW -->
+        <section id="overview" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="layers"></i>
+                <h2>1. ภาพรวมระบบและสถาปัตยกรรม (System Overview)</h2>
+            </div>
+            <div class="content-card">
+                <p style="margin-bottom:16px;">ระบบถูกออกแบบมาเพื่อเพิ่มประสิทธิภาพการทำงานของอู่ซ่อมรถยนต์ ลดข้อผิดพลาดของเอกสาร และให้ความสะดวกแก่ลูกค้าด้วยเทคโนโลยีสมัยใหม่:</p>
+                <div class="grid-3">
+                    <div class="feature-box">
+                        <div class="feat-icon blue"><i data-lucide="cpu"></i></div>
+                        <h4>AI Diagnosis & Pricing</h4>
+                        <p>สกัดอาการของรถและประเมินค่าแรง ค่าอะไหล่อัตโนมัติด้วย AI Copilot</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feat-icon green"><i data-lucide="database"></i></div>
+                        <h4>SQLite Database</h4>
+                        <p>ฐานข้อมูลไฟล์เดียว (<code>workshop_demo.db</code>) เสถียร ไม่เปลืองทรัพยากร สำรองข้อมูลง่าย</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feat-icon amber"><i data-lucide="smartphone"></i></div>
+                        <h4>LINE & Public Tracker</h4>
+                        <p>ลูกค้าสามารถตรวจเช็คความคืบหน้าของงานซ่อมได้เองตลอด 24 ชั่วโมง</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. LAUNCH & RUN -->
+        <section id="launch" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="play-circle"></i>
+                <h2>2. การเปิด-ปิดระบบ (How to Start & Stop)</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="monitor"></i> วิธีเปิดใช้งาน (3 วิธีง่ายๆ)</h3>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-info">
+                            <h4>เปิดผ่าน Desktop Shortcut (แนะนำ)</h4>
+                            <p>ดับเบิ้ลคลิกไอคอน <strong>"Automotive Workshop Command Center"</strong> ที่หน้าจอ Desktop ของคุณ</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-info">
+                            <h4>เปิดผ่าน Direct Batch บน Desktop</h4>
+                            <p>ดับเบิ้ลคลิกไฟล์ <strong>"START Automotive Workshop.bat"</strong> บน Desktop</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-info">
+                            <h4>เปิดผ่านโฟลเดอร์โปรเจกต์</h4>
+                            <p>ดับเบิ้ลคลิกไฟล์ <strong>"START.bat"</strong> (หรือ <code>run.bat</code>) ในโฟลเดอร์โปรแกรม</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:20px; padding:12px 16px; background:rgba(59,130,246,0.1); border-left:4px solid var(--primary); border-radius:6px; font-size:0.85rem; color:#93c5fd;">
+                    💡 <strong>หมายเหตุ:</strong> เมื่อรันไฟล์เสร็จสิ้น หน้าต่างสีดำจะเริ่มทำงาน และเปิดหน้าต่างเบราว์เซอร์เข้าสู่ Dashboard ให้อัตโนมัติทันที
+                </div>
+                <div style="margin-top:14px; padding:12px 16px; background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; border-radius:6px; font-size:0.85rem; color:#fca5a5;">
+                    🛑 <strong>วิธีปิดระบบ:</strong> เพียงคลิกปิดหน้าต่างสีดำ (Command Prompt) หรือกด <code>Ctrl + C</code> ในหน้าต่างนั้น
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. IMPORTANT URLS -->
+        <section id="urls" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="globe"></i>
+                <h2>3. ลิงก์เข้าใช้งานระบบสำคัญ (Important URLs)</h2>
+            </div>
+            <div class="content-card">
+                <table class="url-table">
+                    <thead>
+                        <tr>
+                            <th>หน้าจอ</th>
+                            <th>ลิงก์ (URL)</th>
+                            <th>คำอธิบาย</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>🏠 Dashboard หลัก</strong></td>
+                            <td><a href="http://localhost:8000/dashboard" target="_blank">http://localhost:8000/dashboard</a></td>
+                            <td>หน้าจอควบคุมกลาง กราฟสรุปผล และใบรับรถ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📦 คลังและสต็อกอะไหล่</strong></td>
+                            <td><a href="http://localhost:8000/stock" target="_blank">http://localhost:8000/stock</a></td>
+                            <td>ตรวจสอบสินค้าคงเหลือ เบิกจ่าย และรหัส SKU</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📷 สแกนเนอร์ AI & OCR</strong></td>
+                            <td><a href="http://localhost:8000/scan" target="_blank">http://localhost:8000/scan</a></td>
+                            <td>สแกนบิลซื้อของ และสแกนป้ายทะเบียนรถ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🔍 ระบบตรวจเช็คงานซ่อม</strong></td>
+                            <td><a href="http://localhost:8000/track" target="_blank">http://localhost:8000/track</a></td>
+                            <td>หน้าสำหรับลูกค้าเช็คสถานะรถผ่านเลขทะเบียน</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📖 คู่มือการใช้งานนี้</strong></td>
+                            <td><a href="http://localhost:8000/manual" target="_blank">http://localhost:8000/manual</a></td>
+                            <td>เอกสารสรุปการใช้งานทุกโมดูลในระบบ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⚡ REST API Docs</strong></td>
+                            <td><a href="http://localhost:8000/docs" target="_blank">http://localhost:8000/docs</a></td>
+                            <td>Swagger UI สำหรับนักพัฒนาทดสอบ API</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4.1 DASHBOARD -->
+        <section id="dashboard" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="layout-dashboard"></i>
+                <h2>4.1 Dashboard หลัก (Command Center Dashboard)</h2>
+            </div>
+            <div class="content-card">
+                <div class="grid-2">
+                    <div>
+                        <h3><i data-lucide="bar-chart-2"></i> สรุป KPI 4 มิติ</h3>
+                        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">บนหน้า Dashboard มีตัวชี้วัดสำคัญที่อัปเดตแบบ Realtime:</p>
+                        <ul style="padding-left:20px; font-size:0.88rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+                            <li><strong>ยอดขายรวมเดือนนี้:</strong> รวมรายได้จากค่าแรงและค่าอะไหล่ทั้งหมด</li>
+                            <li><strong>งานซ่อมกำลังดำเนินการ:</strong> รถที่อยู่ในกระบวนการซ่อม พร้อมจำนวนคันที่รอช่างอนุมัติ</li>
+                            <li><strong>อะไหล่ใกล้หมดคลัง:</strong> เตือนเมื่อมีสินค้าลดลงต่ำกว่าจุด Reorder Level</li>
+                            <li><strong>นัดหมายวันนี้:</strong> แสดงจำนวนคิวรถที่จะเข้ามาวันนี้ สามารถคลิกเพื่อดูปฏิทินได้ทันที</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3><i data-lucide="bot"></i> R.O.S.E. AI Copilot ด้านขวา</h3>
+                        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">ผู้ช่วยอัจฉริยะประจำอู่ที่คุณสามารถสั่งการด้วยภาษาพูด:</p>
+                        <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:12px; font-family:'Fira Code', monospace; font-size:0.8rem; color:#38bdf8;">
+                            > "สต็อกน้ำมันเครื่อง 5W-30 เหลือเท่าไหร่"<br>
+                            > "รถทะเบียน กข 1234 อนุมัติซ่อมหรือยัง"<br>
+                            > "ยอดขายเดือนนี้เป็นอย่างไรบ้าง"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.2 REPAIRS -->
+        <section id="repairs" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="wrench"></i>
+                <h2>4.2 งานซ่อมและเปิดใบรับรถ (Repairs & Tickets)</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="clipboard-check"></i> ขั้นตอนการเปิดใบรับรถใหม่ (Intake Workflow)</h3>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-info">
+                            <h4>กดปุ่ม "เปิดใบรับรถใหม่"</h4>
+                            <p>อยู่ที่มุมขวาบนของหน้าจอ Dashboard หรือแท็บงานซ่อม</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-info">
+                            <h4>กรอกข้อมูลรถและอาการ</h4>
+                            <p>ใส่เลขทะเบียนรถ, ชื่อลูกค้า, เบอร์โทร และพิมพ์อาการที่ลูกค้าแจ้ง เช่น <em>"เบรคหน้ามีเสียงดัง ผ้าเบรคสึกมาก"</em></p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-info">
+                            <h4>AI คำนวณราคาและอะไหล่ให้อัตโนมัติ</h4>
+                            <p>ระบบจะดึงอะไหล่ที่ตรงกับอาการจากคลัง และคิดค่าแรงตามมาตรฐาน</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-info">
+                            <h4>อนุมัติงานซ่อม (Approve) & ปิดงานซ่อม</h4>
+                            <p>หัวหน้าช่างกดอนุมัติเพื่อเริ่มซ่อม และกดบันทึกเมื่อซ่อมเสร็จเพื่อตัดสต็อกอะไหล่และลงบัญชีรายได้</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.3 APPOINTMENTS -->
+        <section id="appointments" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="calendar"></i>
+                <h2>4.3 ปฏิทินนัดหมายลูกค้า (Appointments)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">โมดูลปฏิทินช่วยจัดตารางคิวงานซ่อมของช่าง ไม่ให้เกิดปัญหารถล้นอู่:</p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4><i data-lucide="plus-circle" style="width:16px; height:16px; display:inline;"></i> การเพิ่มนัดหมาย</h4>
+                        <p>ระบุวันเวลา, เลือกลูกค้าและรถยนต์, ระบุประเภทงาน (เช่น เช็คระยะ 10,000 กม., เปลี่ยนยาง, ซ่อมระบบไฟ) และระบุช่างผู้รับผิดชอบ</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4><i data-lucide="check-circle" style="width:16px; height:16px; display:inline;"></i> สถานะนัดหมาย 4 สี</h4>
+                        <p>
+                            <span class="badge-pill badge-success">Confirmed</span> ยืนยันแล้ว<br>
+                            <span class="badge-pill badge-warning" style="margin-top:4px;">Pending</span> รอยืนยัน<br>
+                            <span class="badge-pill badge-info" style="margin-top:4px;">Completed</span> เสร็จสิ้น
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.4 CUSTOMERS -->
+        <section id="customers" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="users"></i>
+                <h2>4.4 ข้อมูลลูกค้าและ Customer 360° Profile</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="user-check"></i> ประวัติลูกค้าแบบรอบด้าน 360 องศา</h3>
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">เมื่อคลิกที่ชื่อลูกค้าในระบบ จะเปิดหน้าต่าง Customer 360° Modal ทันที:</p>
+                <div class="grid-3">
+                    <div class="feature-box">
+                        <h4>🚗 ยานพาหนะที่เป็นเจ้าของ</h4>
+                        <p>แสดงรถทุกคัน ยี่ห้อ รุ่น ปี สี และเลขไมล์สะสมล่าสุด</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>💰 ยอดใช้จ่ายสะสม</h4>
+                        <p>คำนวณยอดเงินรวมที่ลูกค้าเคยจ่ายให้อู่ เพื่อพิจารณาส่วนลด VIP</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>📜 ประวัติการซ่อมทั้งหมด</h4>
+                        <p>ดูรายการใบแจ้งซ่อมย้อนหลัง อะไหล่ที่เคยเปลี่ยน และวันที่เข้าซ่อม</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.5 STOCK -->
+        <section id="stock" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="package"></i>
+                <h2>4.5 จัดการคลังและสต็อกอะไหล่ (Stock & Inventory)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">เข้าใช้งานผ่านแท็บ <strong>"คลัง/สต๊อก"</strong> หรือ URL: <code>http://localhost:8000/stock</code></p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4>📦 การเพิ่มอะไหล่ & คัดกรองหมวดหมู่</h4>
+                        <p>บันทึกชื่ออะไหล่, รหัส SKU, หมวดหมู่ (น้ำมันเครื่อง, กรอง, เบรค, ไฟฟ้า, อะไหล่ช่วงล่าง), ราคาทุน, ราคาขาย และจุดเตือนสั่งซื้อ (Reorder Level)</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>🔄 ปรับยอดสต็อก & ประวัติการเคลื่อนไหว</h4>
+                        <p>กดปุ่ม <strong>[+]</strong> เพื่อรับเข้าสต็อก หรือ <strong>[-]</strong> เพื่อเบิกจ่าย พร้อมบันทึกประวัติการทำรายการทุกครั้งอย่างโปร่งใส</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.6 PURCHASES & SUPPLIERS -->
+        <section id="purchases" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="truck"></i>
+                <h2>4.6 การจัดซื้อและผู้จำหน่ายอะไหล่ (Purchases & Suppliers)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">บริหารจัดการคู่ค้าและร้านค้าส่งอะไหล่:</p>
+                <ul style="padding-left:20px; font-size:0.88rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+                    <li><strong>รายชื่อผู้จำหน่าย (Suppliers):</strong> บันทึกชื่อร้าน, ที่อยู่, เบอร์โทรศัพท์, เงื่อนไขเครดิต (เช่น เครดิต 30 วัน)</li>
+                    <li><strong>บันทึกบิลซื้ออะไหล่ (Purchase Bills):</strong> บันทึกยอดซื้อเข้าเพื่อเพิ่มสต็อก และติดตามยอดค้างจ่าย</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 4.7 FINANCE & EXPENSES -->
+        <section id="finance" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="banknote"></i>
+                <h2>4.7 การเงินและบันทึกรายจ่าย (Finance & Expenses)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">ระบบควบคุมสภาพคล่องทางการเงินของอู่:</p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4>💸 บันทึกค่าใช้จ่ายรายวัน</h4>
+                        <p>ป้อนค่าใช้จ่ายประจำ เช่น ค่าน้ำ, ค่าไฟ, ค่าอินเทอร์เน็ต, ค่าเช่าร้าน, ค่าอาหารช่าง หรืออุปกรณ์ทำความสะอาด</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>📈 งบกำไร-ขาดทุนอัตโนมัติ (P&L)</h4>
+                        <p>ระบบจะดึงรายรับจากงานซ่อม หักด้วยต้นทุนอะไหล่และค่าใช้จ่ายทั่วไป ออกมาเป็นกำไรสุทธิประจำเดือนทันที</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.8 REPORTS -->
+        <section id="reports" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="pie-chart"></i>
+                <h2>4.8 รายงานและสถิติ 7 แบบ (Reports & Analytics)</h2>
+            </div>
+            <div class="content-card">
+                <div class="grid-3">
+                    <div class="feature-box">
+                        <h4>1. รายงานยอดขาย (Sales)</h4>
+                        <p>ยอดขายรายวัน/รายเดือน แยกอะไหล่และค่าแรง</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>2. อะไหล่ขายดี (Top Parts)</h4>
+                        <p>อะไหล่ที่มีการใช้บ่อยและทำกำไรสูงสุด</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>3. มูลค่าสต็อก (Valuation)</h4>
+                        <p>มูลค่าต้นทุนสินค้าคงเหลือในคลัง</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>4. ผลงานช่าง (Mechanics)</h4>
+                        <p>จำนวนงานที่ซ่อมเสร็จและค่าคอมมิชชั่น</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>5. ลูกค้าชั้นยอด (Top Clients)</h4>
+                        <p>ลูกค้า VIP ที่มียอดใช้บริการสูงสุด</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>6. กำไร-ขาดทุน (P&L)</h4>
+                        <p>รายรับ - ต้นทุน - ค่าใช้จ่าย = กำไรสุทธิ</p>
+                    </div>
+                    <div class="feature-box" style="grid-column: span 3;">
+                        <h4>7. รายงานภาษีขาย (Sales Tax ภ.พ.30)</h4>
+                        <p>คำนวณฐานภาษีและภาษีมูลค่าเพิ่ม (VAT 7%) สำหรับยื่นแบบสรรพากรประจำเดือน</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.9 SCANNER -->
+        <section id="scanner" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="scan-line"></i>
+                <h2>4.9 สแกนเนอร์บิลและป้ายทะเบียน AI OCR (Scanner)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:16px;">เข้าใช้งานที่ URL: <code>http://localhost:8000/scan</code></p>
+                <div class="grid-2">
+                    <div class="feature-box">
+                        <h4>🚘 สแกนป้ายทะเบียนรถยนต์</h4>
+                        <p>อัปโหลดรูปป้ายทะเบียน ระบบ OCR จะอ่านหมวดอักษร ตัวเลข และจังหวัดให้อัตโนมัติ เพื่อค้นหาประวัติหรือเปิดใบรับรถทันที</p>
+                    </div>
+                    <div class="feature-box">
+                        <h4>🧾 สแกนบิลจัดซื้ออะไหล่</h4>
+                        <p>ถ่ายรูปใบเสร็จค่าอะไหล่ AI จะสกัดรายการสินค้า ราคา และแมทช์กับอะไหล่ในสต็อกเพื่อเพิ่มจำนวนเข้าคลังอัตโนมัติ</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4.10 TRACKER -->
+        <section id="tracker" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="external-link"></i>
+                <h2>4.10 ระบบติดตามสถานะงานซ่อมสำหรับลูกค้า (Public Tracker)</h2>
+            </div>
+            <div class="content-card">
+                <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:12px;">ลูกค้าสามารถเข้าใช้งานได้ที่: <strong><code>http://localhost:8000/track</code></strong></p>
+                <div style="background:rgba(255,255,255,0.02); border-radius:12px; padding:20px; border:1px solid var(--border);">
+                    <h4 style="color:#60a5fa; margin-bottom:8px;">💡 ขั้นตอนที่ลูกค้าใช้งาน:</h4>
+                    <ol style="padding-left:20px; font-size:0.85rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:6px;">
+                        <li>ลูกค้าเปิดหน้าเว็บผ่านมือถือหรือคอมพิวเตอร์</li>
+                        <li>พิมพ์หมายเลขทะเบียนรถ เช่น <code>กข 1234</code> แล้วกดค้นหา</li>
+                        <li>ระบบจะแสดงสถานะสดของรถ: <em>รับรถเข้าอู่แล้ว ➜ กำลังถอดตรวจเช็ค ➜ ช่างกำลังดำเนินการซ่อม ➜ รถพร้อมส่งมอบ</em></li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. TROUBLESHOOTING -->
+        <section id="troubleshooting" class="doc-section">
+            <div class="section-header">
+                <i data-lucide="help-circle"></i>
+                <h2>5. การแก้ปัญหาเบื้องต้นและการสำรองข้อมูล (Troubleshooting)</h2>
+            </div>
+            <div class="content-card">
+                <h3><i data-lucide="alert-circle"></i> ปัญหาที่อาจเกิดขึ้นและการแก้ไข</h3>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num">!</div>
+                        <div class="step-info">
+                            <h4>กรณีพอร์ต 8000 ชน (Port 8000 already in use)</h4>
+                            <p>เปิด Command Prompt พิมพ์คำสั่ง <code>netstat -ano | findstr :8000</code> จากนั้นสั่งปิดโปรแกรมเดิมด้วย <code>taskkill /PID &lt;PID&gt; /F</code> แล้วเปิดใหม่</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">!</div>
+                        <div class="step-info">
+                            <h4>การสำรองข้อมูล (Backup Database)</h4>
+                            <p>ข้อมูลทั้งหมดบันทึกอยู่ในไฟล์ <code>workshop_demo.db</code> เพียงคัดลอกไฟล์นี้ไปเก็บไว้ใน Flash drive หรือ Google Drive เป็นประจำ เพื่อป้องกันข้อมูลสูญหาย</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function filterDocs() {
+            const query = document.getElementById('docSearch').value.toLowerCase();
+            const sections = document.querySelectorAll('.doc-section');
+            sections.forEach(sec => {
+                const text = sec.innerText.toLowerCase();
+                sec.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
